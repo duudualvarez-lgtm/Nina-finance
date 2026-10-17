@@ -1,0 +1,1498 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="description" content="Nina, sua assistente financeira">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Nina">
+<style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px/1.4 system-ui,-apple-system,sans-serif;-webkit-text-size-adjust:100%}img{max-width:100%}[hidden]{display:none!important}</style>
+<script>window.NINA_APP=true;</script>
+</head>
+<body>
+<title>Nina Finanças</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one-screen phone app. Ink header + balance strip, chat wallpaper, bottom tab bar. Crown = gold, Pessoal = teal. */
+:root{
+  color-scheme:light;
+  --bg:#F2F4F8; --wall:#F6F7FA; --dot:rgba(23,40,74,.06);
+  --surface:#FFFFFF; --surface2:#F3F5F9; --fg:#18213A; --muted:#66708A; --line:#E1E6EE;
+  --head:#FFFFFF; --head2:#F5F7FB; --head-fg:#18213A; --head-muted:#6B7590;
+  --me:#FBEFD2; --me-fg:#2A2110;
+  --btn:#17284A; --btn-fg:#FFFFFF;
+  --gold:#AE7F25; --gold-hi:#D6A646; --gold-soft:#F8EDD6;
+  --teal:#18877F; --teal-hi:#2DB3A8; --teal-soft:#DAF1EE;
+  --danger:#C0433A; --danger-soft:#FBE3DF; --ok:#2A8556; --ok-soft:#DFF3E7;
+  --shadow:0 1px 1.5px rgba(19,32,58,.07), 0 2px 8px rgba(19,32,58,.05);
+  --display:'Bricolage Grotesque', 'Avenir Next', system-ui, sans-serif;
+  --body:'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+[hidden]{display:none!important}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;overflow:hidden;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--head)}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+:focus-visible{outline:2px solid var(--gold-hi);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+
+.app{height:100%;max-width:640px;margin:0 auto;display:flex;flex-direction:column;background:var(--wall);position:relative;overflow:hidden}
+@media (min-width:700px){.app{border-left:1px solid var(--line);border-right:1px solid var(--line)}}
+
+/* header */
+.top{border-bottom:1px solid var(--line);background:var(--head);color:var(--head-fg);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 10px;display:flex;flex-direction:column;gap:10px}
+.who{display:flex;align-items:center;gap:11px}
+.avatar{width:40px;height:40px;border-radius:50%;flex:none;display:grid;place-items:center;background:radial-gradient(circle at 30% 25%,var(--gold-hi),#8C6418 75%);color:#1A1406;font-family:var(--display);font-weight:800;font-size:19px;box-shadow:0 0 0 3px var(--gold-soft)}
+.avatar.sm{width:28px;height:28px;font-size:14px;box-shadow:none}
+.who .name{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.01em;line-height:1.1}
+.who .status{font-size:12.5px;color:var(--head-muted)}
+.who .status.typing{color:var(--gold)}
+.who .spacer{flex:1}
+.balstrip{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:stretch}
+.bal{background:var(--head2);border-radius:12px;padding:8px 11px;text-align:left;display:flex;flex-direction:column;gap:1px;min-width:0;border:1px solid var(--line)}
+.bal .lbl{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--head-muted);display:flex;align-items:center;gap:6px}
+.bal .lbl i{width:7px;height:7px;border-radius:50%;display:inline-block}
+.bal.c .lbl i{background:var(--gold)} .bal.p .lbl i{background:var(--teal)}
+.bal.c{background:var(--gold-soft);border-color:transparent} .bal.p{background:var(--teal-soft);border-color:transparent}
+.bal b{font-family:var(--display);font-weight:700;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bal b.neg{color:var(--danger)}
+.baledit{background:var(--head2);border-radius:12px;padding:0 12px;color:var(--gold);font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px;border:1.5px dashed color-mix(in srgb,var(--gold) 45%,transparent)}
+.baledit svg{width:16px;height:16px}
+
+/* panes */
+main{flex:1;min-height:0;position:relative}
+.pane{position:absolute;inset:0;display:flex;flex-direction:column}
+.scroll{overflow-y:auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 28px;background:var(--bg)}
+
+/* chat */
+.msgs{flex:1;overflow-y:auto;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));padding-block:14px 10px;display:flex;flex-direction:column;gap:6px;
+  background-color:var(--wall);background-image:radial-gradient(var(--dot) 1.2px,transparent 1.3px);background-size:18px 18px}
+@media (min-width:420px){.msgs{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}}
+.row{display:flex;gap:7px;align-items:flex-end;max-width:100%}
+.row.me{justify-content:flex-end}
+.row .avatar.sm{margin-bottom:2px}
+.row.cont .avatar.sm{visibility:hidden}
+.bub{max-width:min(82%,440px);padding:8px 11px 6px;border-radius:16px;box-shadow:var(--shadow);line-height:1.42;min-width:0;overflow-wrap:anywhere}
+.row.me .bub{background:var(--me);color:var(--me-fg);border-bottom-right-radius:5px;border:1px solid color-mix(in srgb,var(--gold) 18%,transparent)}
+.row.bot .bub{background:var(--surface);border-bottom-left-radius:5px}
+.bub .t{font-size:11px;opacity:.6;text-align:right;margin-top:2px;font-variant-numeric:tabular-nums}
+.bub p{margin:0}
+.bub p+p{margin-top:6px}
+.bub strong{font-weight:700}
+.lead{font-weight:600}
+.daysep{align-self:center;margin:10px 0 4px;font-size:12px;font-weight:600;color:var(--muted);background:var(--surface);padding:4px 11px;border-radius:99px;box-shadow:var(--shadow);text-transform:capitalize}
+.in{animation:pop .28s cubic-bezier(.2,.9,.3,1.2) both}
+@keyframes pop{from{opacity:0;transform:translateY(8px) scale(.97)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.in{animation:none}.dots span{animation:none!important}}
+
+/* receipt */
+.rc{display:flex;flex-direction:column;gap:7px;min-width:min(250px,60vw)}
+.rc .line{display:flex;align-items:center;gap:10px}
+.ico{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:17px;flex:none}
+.ico.c{background:var(--gold-soft)} .ico.p{background:var(--teal-soft)}
+.rc .what{flex:1;min-width:0}
+.rc .what .d{font-weight:600}
+.rc .what .k{font-size:12.5px;color:var(--muted)}
+.rc .amt{font-family:var(--display);font-weight:700;font-size:18px;white-space:nowrap}
+.rc .amt.minus{color:var(--fg)} .rc .amt.plus{color:var(--ok)}
+.rc .foot{border-top:1px dashed var(--line);padding-top:7px;display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:13px}
+.rc .foot span:nth-child(odd){color:var(--muted)}
+.rc .foot span:nth-child(even){text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+.rc .foot .neg{color:var(--danger)}
+.tag{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:99px;letter-spacing:.01em}
+.tag.c{background:var(--gold-soft);color:var(--gold)} .tag.p{background:var(--teal-soft);color:var(--teal)}
+.note{font-size:13px;padding:7px 9px;border-radius:9px;background:var(--surface2)}
+.note.warn{background:var(--danger-soft);color:var(--danger)}
+.lnk{color:var(--gold);font-weight:600;font-size:12.5px;padding:2px 0}
+.rc .acts{display:flex;justify-content:space-between;align-items:center}
+
+/* choices */
+.choices{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.choice{flex:1 1 120px;padding:10px 12px;border-radius:12px;font-weight:600;display:flex;flex-direction:column;align-items:flex-start;gap:1px;border:1.5px solid var(--line);background:var(--surface2);text-align:left}
+.choice small{font-weight:500;font-size:11.5px;color:var(--muted)}
+.choice.c{border-color:color-mix(in srgb,var(--gold) 45%,var(--line))}
+.choice.p{border-color:color-mix(in srgb,var(--teal) 45%,var(--line))}
+.choice.c:hover,.choice.c.sug{background:var(--gold-soft)}
+.choice.p:hover,.choice.p.sug{background:var(--teal-soft)}
+.choice .cn{display:flex;align-items:center;gap:7px}
+.choice .cn i{width:8px;height:8px;border-radius:50%}
+.choice.c .cn i{background:var(--gold)} .choice.p .cn i{background:var(--teal)}
+.catgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:6px;margin-top:8px}
+.catbtn{display:flex;align-items:center;gap:7px;padding:8px 9px;border-radius:10px;background:var(--surface2);border:1px solid var(--line);font-size:13px;font-weight:500;text-align:left;line-height:1.2}
+.catbtn:hover{border-color:var(--gold)}
+.catbtn.on{border-color:var(--gold);background:var(--gold-soft)}
+.catbtn span{font-size:16px}
+
+/* special cards */
+.card{align-self:center;width:min(100%,420px);background:var(--surface);border-radius:16px;box-shadow:var(--shadow);overflow:hidden;margin:6px 0}
+.card .hd{display:flex;align-items:center;gap:9px;padding:11px 14px;background:var(--head2);color:var(--head-fg);border-bottom:1px solid var(--line)}
+.card .hd .tt{font-family:var(--display);font-weight:700;font-size:15.5px;flex:1}
+.card .hd .sub{font-size:12px;color:var(--head-muted);text-transform:capitalize}
+.card .bd{padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.big{font-family:var(--display);font-weight:800;font-size:30px;letter-spacing:-.02em;line-height:1}
+.split{display:flex;height:8px;border-radius:99px;overflow:hidden;background:var(--surface2)}
+.split .c{background:var(--gold)} .split .p{background:var(--teal)}
+.kv{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:13.5px}
+.kv span:nth-child(even){text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+.kv .dim{color:var(--muted)}
+.billrow{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;font-size:14px}
+.datechip{width:42px;text-align:center;border-radius:9px;background:var(--surface2);padding:4px 0;line-height:1.05}
+.datechip b{display:block;font-family:var(--display);font-size:17px}
+.datechip small{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.datechip.late{background:var(--danger-soft);color:var(--danger)}
+.datechip.late small{color:var(--danger)}
+.btn{padding:10px 14px;border-radius:12px;font-weight:600;background:var(--btn);color:var(--btn-fg)}
+.btn.ghost{background:var(--surface2);color:var(--fg);border:1px solid var(--line)}
+.btn.gold{background:var(--gold);color:#fff}
+.btn.danger{background:var(--danger-soft);color:var(--danger)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+.typing .bub{padding:11px 14px}
+.dots{display:flex;gap:4px}
+.dots span{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:blink 1.1s infinite}
+.dots span:nth-child(2){animation-delay:.15s}.dots span:nth-child(3){animation-delay:.3s}
+@keyframes blink{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-2px)}}
+
+/* composer */
+.connbar{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:10px;font-size:13px;line-height:1.4;background:var(--gold-soft);color:var(--fg);border-bottom:1px solid var(--line)}
+.connbar.bad{background:var(--danger-soft);color:var(--danger)}
+.connbar strong{font-weight:700}
+.gear{margin-left:auto;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--muted);background:var(--surface2);border:1px solid var(--line)}
+.gear svg{width:21px;height:21px}
+.setsec{background:var(--surface);border-radius:16px;padding:14px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+.setsec h4{margin:0;font-family:var(--display);font-size:17px}
+.setsec p{margin:0;font-size:13.5px;color:var(--muted);line-height:1.45}
+.setrow{display:flex;gap:8px;flex-wrap:wrap}
+.setrow .btn{flex:1 1 140px}
+.pill{display:inline-block;font-size:12px;font-weight:700;padding:3px 9px;border-radius:99px}
+.pill.on{background:var(--ok-soft);color:var(--ok)} .pill.off{background:var(--surface2);color:var(--muted)}
+.quick{display:flex;gap:6px;overflow-x:auto;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));padding-block:8px 2px;background:var(--wall);scrollbar-width:none}
+.quick::-webkit-scrollbar{display:none}
+.qc{flex:none;padding:6px 12px;border-radius:99px;background:var(--surface);box-shadow:var(--shadow);font-size:13px;font-weight:600;color:var(--fg)}
+.composer{display:flex;gap:8px;align-items:center;padding-left:max(10px,env(safe-area-inset-left,0px));padding-right:max(10px,env(safe-area-inset-right,0px));padding-block:8px 10px;background:var(--wall)}
+.composer input{flex:1;min-width:0;font-size:16px;padding:12px 16px;border-radius:99px;border:1px solid var(--line);background:var(--surface);outline:none;box-shadow:var(--shadow)}
+.composer input:focus{border-color:var(--gold)}
+.send{width:46px;height:46px;border-radius:50%;flex:none;display:grid;place-items:center;background:var(--gold);color:#fff;box-shadow:var(--shadow);transition:transform .15s}
+.send:active{transform:scale(.92)}
+.send svg{width:20px;height:20px}
+
+/* tabs */
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface);border-top:1px solid var(--line);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+.tab{padding:8px 4px 9px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11.5px;font-weight:600;color:var(--muted);position:relative}
+.tab svg{width:22px;height:22px}
+.tab[aria-selected="true"]{color:var(--fg)}
+.tab[aria-selected="true"]::before{content:"";position:absolute;top:0;left:30%;right:30%;height:3px;border-radius:0 0 3px 3px;background:var(--gold)}
+.tab .badge{position:absolute;top:5px;left:calc(50% + 8px);min-width:17px;height:17px;padding:0 4px;border-radius:99px;background:var(--danger);color:#fff;font-size:10.5px;display:grid;place-items:center}
+
+/* sections (graficos / contas) */
+.h1{font-family:var(--display);font-weight:800;font-size:26px;letter-spacing:-.02em;margin:0 0 4px;text-wrap:balance}
+.lede{color:var(--muted);margin:0 0 14px;font-size:14px}
+.seg{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.seg button{padding:7px 12px;border-radius:99px;font-size:13px;font-weight:600;background:var(--surface);border:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--btn);color:var(--btn-fg);border-color:transparent}
+.panel{background:var(--surface);border-radius:16px;padding:14px;box-shadow:var(--shadow);margin-top:12px;display:flex;flex-direction:column;gap:10px}
+.panel h2{font-family:var(--display);font-weight:700;font-size:17px;margin:0}
+.panel .hint{font-size:12.5px;color:var(--muted);margin-top:-6px}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.kpi{background:var(--surface);border-radius:14px;padding:11px 12px;box-shadow:var(--shadow);min-width:0}
+.kpi .l{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);display:flex;gap:5px;align-items:center}
+.kpi .l i{width:7px;height:7px;border-radius:50%}
+.kpi .v{font-family:var(--display);font-weight:700;font-size:18px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:380px){.kpi .v{font-size:15px}}
+.cbar{display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:4px 9px;align-items:center}
+.cbar .e{font-size:17px;text-align:center}
+.cbar .n{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cbar .v{font-size:13.5px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+.cbar .track{grid-column:2/4;height:8px;border-radius:99px;background:var(--surface2);overflow:hidden}
+.cbar .fill{height:100%;border-radius:99px}
+.cbar .fill.c{background:linear-gradient(90deg,var(--gold),var(--gold-hi))}
+.cbar .fill.p{background:linear-gradient(90deg,var(--teal),var(--teal-hi))}
+.cbar .pct{color:var(--muted);font-weight:500;margin-left:4px}
+.chartwrap{overflow-x:auto}
+.chartwrap svg{display:block;width:100%;min-width:300px;height:auto}
+.empty{text-align:center;color:var(--muted);padding:22px 10px;font-size:14px}
+.legend{display:flex;gap:14px;font-size:12.5px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.toplist{display:flex;flex-direction:column;gap:8px}
+.toplist .it{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center}
+.toplist .it .d{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.toplist .it .k{font-size:12px;color:var(--muted)}
+.toplist .it .v{font-weight:700;font-variant-numeric:tabular-nums}
+
+.bill{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px 12px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
+.bill:first-of-type{border-top:0}
+.bill .nm{font-weight:600;font-size:15px}
+.bill .meta{font-size:12.5px;color:var(--muted);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.bill .val{font-family:var(--display);font-weight:700;font-size:17px;text-align:right}
+.bill .acts{grid-column:2/4;display:flex;gap:6px;justify-content:flex-end}
+.bill .acts button{padding:6px 11px;border-radius:99px;font-size:12.5px;font-weight:600}
+.pay{background:var(--ok-soft);color:var(--ok)}
+.rm{background:var(--surface2);color:var(--muted)}
+.st{font-size:11px;font-weight:700;padding:2px 7px;border-radius:99px;letter-spacing:.02em}
+.st.late{background:var(--danger-soft);color:var(--danger)}
+.st.soon{background:var(--gold-soft);color:var(--gold)}
+.st.later{background:var(--surface2);color:var(--muted)}
+.groupt{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700;margin-top:4px}
+
+.form{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form .full{grid-column:1/-1}
+.fld{display:flex;flex-direction:column;gap:5px;min-width:0}
+.fld label{font-size:12px;font-weight:600;color:var(--muted)}
+.fld input,.fld select{width:100%;padding:11px 12px;border-radius:11px;border:1px solid var(--line);background:var(--surface2);font-size:16px;min-width:0}
+.fld input:focus,.fld select:focus{outline:none;border-color:var(--gold)}
+.chk{display:flex;align-items:center;gap:9px;font-size:14px}
+.chk input{width:18px;height:18px;accent-color:var(--gold)}
+.formerr{color:var(--danger);font-size:13px;min-height:1em}
+
+/* sheet */
+.sheet-bg{position:fixed;inset:0;background:rgba(24,33,58,.35);z-index:30;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--bg);width:100%;max-width:640px;max-height:88%;overflow-y:auto;border-radius:22px 22px 0 0;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:10px calc(22px + env(safe-area-inset-bottom,0px));animation:up .25s ease-out}
+@keyframes up{from{transform:translateY(30px);opacity:.6}to{transform:none;opacity:1}}
+.grab{width:40px;height:4px;border-radius:9px;background:var(--line);margin:0 auto 12px}
+.sheet h3{font-family:var(--display);font-weight:800;font-size:22px;margin:0 0 4px}
+.sheet .sub{color:var(--muted);font-size:13.5px;margin:0 0 12px}
+.acct{background:var(--surface);border-radius:16px;padding:14px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px;margin-bottom:12px;border-top:4px solid var(--gold)}
+.acct.p{border-top-color:var(--teal)}
+.acct .top2{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.acct .nm{font-family:var(--display);font-weight:700;font-size:17px}
+.acct .cur{font-family:var(--display);font-weight:800;font-size:24px}
+.inline{display:flex;gap:8px}
+.inline input{flex:1;min-width:0}
+.ok-msg{color:var(--ok);font-size:13px;font-weight:600;min-height:1em}
+.closex{position:absolute;right:max(14px,env(safe-area-inset-right,0px));top:10px;width:34px;height:34px;border-radius:50%;background:var(--surface2);font-size:18px;color:var(--muted)}
+.sheet{position:relative}
+</style>
+
+<div class="app" id="app">
+  <header class="top">
+    <div class="who">
+      <div class="avatar" aria-hidden="true">N</div>
+      <div>
+        <div class="name">Nina</div>
+        <div class="status" id="status">sua assistente financeira · online</div>
+      </div>
+      <button class="gear" id="gearBtn" aria-label="Ajustes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+    </div>
+    <div class="balstrip">
+      <button class="bal c" id="balC" aria-label="Saldo Crown"><span class="lbl"><i></i>Crown</span><b class="num">$0,00</b></button>
+      <button class="bal p" id="balP" aria-label="Saldo pessoal"><span class="lbl"><i></i>Pessoal</span><b class="num">$0,00</b></button>
+      <button class="baledit" id="balEdit" aria-label="Informar saldos das contas">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Saldos
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <section class="pane" id="tab-chat" aria-label="Conversa">
+      <div class="connbar" id="connbar" hidden></div>
+      <div class="msgs" id="msgs" aria-live="polite"></div>
+      <div class="quick" id="quick">
+        <button class="qc" data-q="saldo">💼 Saldo</button>
+        <button class="qc" data-q="hoje">📅 Hoje</button>
+        <button class="qc" data-q="mês">🗓️ Mês</button>
+        <button class="qc" data-q="contas">🧾 Contas da semana</button>
+        <button class="qc" data-q="desfazer">↩️ Desfazer</button>
+        <button class="qc" data-q="memoria">🧠 Memória</button>
+        <button class="qc" data-q="backup">💾 Backup</button>
+        <button class="qc" data-q="ajuda">❔ Ajuda</button>
+      </div>
+      <form class="composer" id="composer" autocomplete="off">
+        <input id="inp" type="text" inputmode="text" placeholder="Ex: 45 gasolina van" aria-label="Mensagem para a Nina">
+        <button class="send" type="submit" aria-label="Enviar">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4 21 12 3.4 3.6l-.01 6.53L15 12 3.39 13.87z"/></svg>
+        </button>
+      </form>
+    </section>
+
+    <section class="pane scroll" id="tab-graf" hidden aria-label="Gráficos">
+      <h1 class="h1">Pra onde vai o dinheiro</h1>
+      <p class="lede">Seus gastos separados por conta e categoria.</p>
+      <div class="seg" id="segPeriod">
+        <button data-p="7" aria-pressed="false">7 dias</button>
+        <button data-p="mes" aria-pressed="true">Este mês</button>
+        <button data-p="ant" aria-pressed="false">Mês passado</button>
+        <button data-p="tudo" aria-pressed="false">Tudo</button>
+      </div>
+      <div class="seg" id="segAcc">
+        <button data-a="all" aria-pressed="true">Crown + Pessoal</button>
+        <button data-a="crown" aria-pressed="false">Só Crown</button>
+        <button data-a="pessoal" aria-pressed="false">Só Pessoal</button>
+      </div>
+      <div id="grafBody"></div>
+    </section>
+
+    <section class="pane scroll" id="tab-entradas" hidden aria-label="Entradas">
+      <h1 class="h1">Dinheiro que entrou</h1>
+      <p class="lede">Quanto entrou na sua conta e qual companhia pagou.</p>
+      <div class="seg" id="segEnt">
+        <button data-e="semana" aria-pressed="true">Esta semana</button>
+        <button data-e="passada" aria-pressed="false">Semana passada</button>
+        <button data-e="mes" aria-pressed="false">Este mês</button>
+      </div>
+      <div id="entBody"></div>
+    </section>
+
+    <section class="pane scroll" id="tab-contas" hidden aria-label="Contas a pagar">
+      <h1 class="h1">Contas a pagar</h1>
+      <p class="lede">Aqui é só lembrete. A Nina avisa na conversa quando tiver conta vencendo na semana. Quando pagar, você lança o gasto na conversa como sempre e marca a conta como paga aqui.</p>
+      <div id="contasBody"></div>
+      <div class="panel">
+        <h2>Nova conta</h2>
+        <form class="form" id="billForm">
+          <div class="fld full"><label for="bNome">Nome da conta</label><input id="bNome" placeholder="Ex: Seguro da van, Aluguel, Luz"></div>
+          <div class="fld"><label for="bValor">Valor</label><input id="bValor" inputmode="decimal" placeholder="0,00"></div>
+          <div class="fld"><label for="bData">Vencimento</label><input id="bData" type="date"></div>
+          <div class="fld"><label for="bAcc">Sai de qual conta</label><select id="bAcc"><option value="pessoal">Pessoal</option><option value="crown">Crown</option></select></div>
+          <div class="fld"><label for="bCat">Categoria</label><select id="bCat"></select></div>
+          <label class="chk full"><input type="checkbox" id="bRec" checked> Repete todo mês</label>
+          <div class="formerr full" id="bErr"></div>
+          <button class="btn full" type="submit">Adicionar conta</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-tab="chat">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-4.5 4v-4h0A1.5 1.5 0 0 1 4 14.5z"/></svg>Conversa</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="graf">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 20h16M7 16v-5M12 16V6M17 16v-8"/></svg>Gráficos</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="entradas">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11M7.5 9.5 12 14l4.5-4.5"/><path d="M4 14v3.5A2.5 2.5 0 0 0 6.5 20h11a2.5 2.5 0 0 0 2.5-2.5V14"/></svg>Entradas</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="contas">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2.5"/><path d="M4 10h16M9 3v4M15 3v4" stroke-linecap="round"/></svg>Contas<span class="badge" id="billBadge" hidden></span></button>
+  </nav>
+</div>
+
+<div class="sheet-bg" id="sheetBg" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
+
+<script>
+(function(){
+"use strict";
+/* ---------- categorias ---------- */
+const CATS = [
+  {id:'folha',n:'Funcionários / Folha',a:'crown',i:'👷'},
+  {id:'comb_van',n:'Combustível da van',a:'crown',i:'⛽'},
+  {id:'manut_van',n:'Manutenção da van',a:'crown',i:'🔧'},
+  {id:'material',n:'Material / Suprimentos',a:'crown',i:'📦'},
+  {id:'equip',n:'Equipamentos / Ferramentas',a:'crown',i:'🧰'},
+  {id:'fornecedor',n:'Fornecedores / Terceiros',a:'crown',i:'🤝'},
+  {id:'seguro_crown',n:'Seguro (Crown)',a:'crown',i:'🛡️'},
+  {id:'impostos',n:'Impostos',a:'crown',i:'🏛️'},
+  {id:'licencas',n:'Licenças / Documentos',a:'crown',i:'📄'},
+  {id:'marketing',n:'Marketing / Anúncios',a:'crown',i:'📣'},
+  {id:'escritorio',n:'Aluguel / Escritório',a:'crown',i:'🏢'},
+  {id:'tel_crown',n:'Telefone / Internet',a:'crown',i:'📶'},
+  {id:'software',n:'Software / Apps',a:'crown',i:'💻'},
+  {id:'refeicao_equipe',n:'Refeição da equipe',a:'crown',i:'🥪'},
+  {id:'pedagio',n:'Pedágio / Estacionamento',a:'crown',i:'🅿️'},
+  {id:'banco_crown',n:'Taxas bancárias',a:'crown',i:'🏦'},
+  {id:'outros_crown',n:'Outros da Crown',a:'crown',i:'📌'},
+  {id:'mercado',n:'Mercado',a:'pessoal',i:'🛒'},
+  {id:'gasolina',n:'Gasolina do carro',a:'pessoal',i:'⛽'},
+  {id:'carro',n:'Carro (manutenção/seguro)',a:'pessoal',i:'🚗'},
+  {id:'restaurante',n:'Restaurante',a:'pessoal',i:'🍽️'},
+  {id:'lanche',n:'Lanche / Café',a:'pessoal',i:'☕'},
+  {id:'delivery',n:'Delivery',a:'pessoal',i:'🛵'},
+  {id:'lazer',n:'Lazer',a:'pessoal',i:'🎉'},
+  {id:'filho',n:'Filho',a:'pessoal',i:'🧒'},
+  {id:'escola',n:'Escola / Creche',a:'pessoal',i:'🎒'},
+  {id:'saude',n:'Saúde / Farmácia',a:'pessoal',i:'💊'},
+  {id:'academia',n:'Academia',a:'pessoal',i:'🏋️'},
+  {id:'roupas',n:'Roupas / Calçados',a:'pessoal',i:'👕'},
+  {id:'casa',n:'Casa / Aluguel',a:'pessoal',i:'🏠'},
+  {id:'contas_casa',n:'Luz / Água / Gás',a:'pessoal',i:'💡'},
+  {id:'celular',n:'Celular / Internet',a:'pessoal',i:'📱'},
+  {id:'assinaturas',n:'Assinaturas',a:'pessoal',i:'📺'},
+  {id:'brasil',n:'Envio pro Brasil',a:'pessoal',i:'🇧🇷'},
+  {id:'familia',n:'Família',a:'pessoal',i:'👨‍👩‍👧'},
+  {id:'igreja',n:'Igreja / Doações',a:'pessoal',i:'⛪'},
+  {id:'presentes',n:'Presentes',a:'pessoal',i:'🎁'},
+  {id:'beleza',n:'Barbeiro / Beleza',a:'pessoal',i:'💈'},
+  {id:'pets',n:'Pets',a:'pessoal',i:'🐾'},
+  {id:'viagem',n:'Viagem',a:'pessoal',i:'✈️'},
+  {id:'transporte',n:'Uber / Transporte',a:'pessoal',i:'🚕'},
+  {id:'eletronicos',n:'Eletrônicos',a:'pessoal',i:'🎧'},
+  {id:'online',n:'Compras online',a:'pessoal',i:'📦'},
+  {id:'cartao',n:'Cartão / Dívidas',a:'pessoal',i:'💳'},
+  {id:'poupanca',n:'Poupança / Investimento',a:'pessoal',i:'🐷'},
+  {id:'outros',n:'Outros pessoais',a:'pessoal',i:'📌'},
+];
+const CAT = Object.fromEntries(CATS.map(c=>[c.id,c]));
+CAT.entrada={id:'entrada',n:'Entrada',i:'💰'}; CAT.ajuste={id:'ajuste',n:'Saldo informado',i:'🧮'};
+
+// [palavras, categoria se Crown, categoria se Pessoal, conta sugerida]
+const RULES = [
+ ['uber eats|ubereats|doordash|grubhub|delivery|ifood|postmates','refeicao_equipe','delivery','pessoal'],
+ ['cheque|funcionario|funcionaria|funcionarios|salario|payroll|ajudante|ajudantes|helper|diaria|diarista|pagamento da equipe','folha','outros','crown'],
+ ['luz|energia|duke|agua|esgoto|lixo|gas de casa|piedmont','escritorio','contas_casa','pessoal'],
+ ['gasolina|gas|diesel|combustivel|posto|shell|exxon|bp|chevron|wawa|sheetz|speedway|circle k|marathon|sunoco|citgo|murphy','comb_van','gasolina',''],
+ ['oleo|troca de oleo|pneu|pneus|mecanico|oficina|revisao|autozone|advance auto|oreilly|o reilly|lava jato|car wash|lavagem','manut_van','carro',''],
+ ['seguro|insurance|geico|progressive|state farm|allstate','seguro_crown','carro',''],
+ ['home depot|lowes|menards|harbor freight|material|materiais|tinta|madeira|parafuso|ferragem|suprimento|suprimentos|produto de limpeza|produtos de limpeza','material','casa','crown'],
+ ['ferramenta|ferramentas|maquina|equipamento|equipamentos|uniforme|uniformes','equip','outros','crown'],
+ ['fornecedor|subcontratado|terceirizado|subcontractor','fornecedor','outros','crown'],
+ ['imposto|impostos|irs|tax|taxes','impostos','outros','crown'],
+ ['licenca|license|permit|alvara|documentacao','licencas','outros','crown'],
+ ['anuncio|anuncios|ads|facebook ads|google ads|panfleto|flyer|flyers|marketing|cartao de visita|placa','marketing','outros','crown'],
+ ['quickbooks|software|dominio|site|jobber|canva','software','assinaturas','crown'],
+ ['pedagio|toll|estacionamento|parking','pedagio','transporte',''],
+ ['tarifa|fee|taxa do banco|taxa bancaria|juros','banco_crown','cartao',''],
+ ['brasil|remessa|wise|remitly|western union|mandei pro|enviei pro|mandei pra|enviei pra','outros_crown','brasil','pessoal'],
+ ['walmart|publix|costco|aldi|food lion|harris teeter|lidl|kroger|target|sams|sams club|mercado|supermercado|compras da casa|fresh market|whole foods|trader joes|lowes foods','refeicao_equipe','mercado','pessoal'],
+ ['filho|filha|fralda|fraldas|brinquedo|brinquedos|bebe|baby|kids|crianca|leite em po|mesada','outros_crown','filho','pessoal'],
+ ['escola|creche|daycare|material escolar|mensalidade|curso','outros_crown','escola','pessoal'],
+ ['farmacia|cvs|walgreens|remedio|remedios|medico|dentista|hospital|consulta|exame|plano de saude','outros_crown','saude','pessoal'],
+ ['academia|gym|planet fitness|crossfit|suplemento','outros_crown','academia','pessoal'],
+ ['restaurante|jantar|janta|almoco|almocei|mcdonalds|mcdonald|burger|burger king|wendys|chick fil a|chickfila|chipotle|pizza|churrasco|churrascaria|taco bell|subway|olive garden|outback|cracker barrel|waffle house|bojangles|cookout|five guys','refeicao_equipe','restaurante',''],
+ ['cafe|starbucks|dunkin|lanche|padaria|sorvete|doce|acai|salgado|snack','refeicao_equipe','lanche',''],
+ ['netflix|spotify|youtube|disney|hbo|prime video|icloud|assinatura|paramount|hulu','software','assinaturas','pessoal'],
+ ['cinema|parque|praia|bar|balada|show|jogo|lazer|passeio|boliche|cerveja|bebida|pesca|golf','outros_crown','lazer','pessoal'],
+ ['roupa|roupas|tenis|sapato|shein|zara|nike|ross|tj maxx|marshalls|old navy|camisa|calca','equip','roupas','pessoal'],
+ ['aluguel|rent|financiamento|hipoteca|mortgage|condominio|hoa','escritorio','casa',''],
+ ['celular|telefone|internet|spectrum|att|at t|verizon|t mobile|tmobile|wifi','tel_crown','celular',''],
+ ['uber|lyft|onibus|trem|taxi','pedagio','transporte','pessoal'],
+ ['igreja|dizimo|oferta|doacao','outros_crown','igreja','pessoal'],
+ ['presente|presentes|aniversario|natal','outros_crown','presentes','pessoal'],
+ ['barbeiro|barbearia|cabelo|salao|unha|manicure|sobrancelha','outros_crown','beleza','pessoal'],
+ ['pet|racao|veterinario|vet|cachorro|gato|petsmart|petco','outros_crown','pets','pessoal'],
+ ['viagem|hotel|passagem|airbnb|aviao|voo|aeroporto','outros_crown','viagem','pessoal'],
+ ['notebook|computador|fone|eletronico|eletronicos|best buy|iphone|tv|videogame','equip','eletronicos',''],
+ ['amazon|ebay|temu|online','material','online',''],
+ ['cartao|fatura|credit card|emprestimo|divida|parcela','banco_crown','cartao','pessoal'],
+ ['poupanca|investimento|guardei|reserva|acoes|cripto','outros_crown','poupanca','pessoal'],
+ ['mae|pai|irmao|irma|familia|sogra|tio|tia|avo','outros_crown','familia','pessoal'],
+].map(r=>({k:r[0].split('|'),crown:r[1],pessoal:r[2],hint:r[3]}));
+const CROWN_WORDS=['van','truck','caminhao','crown','cliente','clientes','obra','job','equipe','empresa','servico'];
+
+/* ---------- utilidades ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm=s=>' '+String(s).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()+' ';
+const has=(n,k)=>n.includes(' '+k+' ');
+const money=v=>(v<0?'-':'')+'$'+Math.abs(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const pad=n=>String(n).padStart(2,'0');
+const dstr=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const pdate=s=>{const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
+const addDays=(s,n)=>{const d=pdate(s);d.setDate(d.getDate()+n);return dstr(d)};
+const addMonth=s=>{const d=pdate(s);const day=d.getDate();d.setDate(1);d.setMonth(d.getMonth()+1);const last=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();d.setDate(Math.min(day,last));return dstr(d)};
+const today=()=>dstr(new Date());
+const diffDays=(a,b)=>Math.round((pdate(b)-pdate(a))/864e5);
+const hhmm=ts=>{const d=new Date(ts);return pad(d.getHours())+':'+pad(d.getMinutes())};
+const dayLabel=s=>{const t=today();if(s===t)return 'Hoje';if(s===addDays(t,-1))return 'Ontem';return pdate(s).toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'})};
+const shortDate=s=>pdate(s).toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'}).replace(/\./g,'');
+const MES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+const accName=a=>a==='crown'?'Crown':'Pessoal';
+const ac=a=>a==='crown'?'c':'p';
+function pick(arr,seed){let h=0;for(const ch of String(seed))h=(h*31+ch.charCodeAt(0))|0;return arr[Math.abs(h)%arr.length]}
+
+function parseAmount(s){
+  const m=s.match(/\$?\s*(\d[\d.,]*)/); if(!m) return null;
+  let t=m[1].replace(/[.,]+$/,''); const lc=t.lastIndexOf(','), ld=t.lastIndexOf('.'); let v;
+  if(lc>-1&&ld>-1){const dec=lc>ld?',':'.';const th=dec===','?'.':',';v=parseFloat(t.split(th).join('').replace(dec,'.'))}
+  else if(lc>-1||ld>-1){const sep=lc>-1?',':'.';const p=t.split(sep);v=(p.length===2&&p[1].length<=2)?parseFloat(p[0]+'.'+p[1]):parseFloat(p.join(''))}
+  else v=parseFloat(t);
+  if(!isFinite(v)||v<=0) return null; return {v:Math.round(v*100)/100,match:m[0]};
+}
+function cleanDesc(s){
+  let d=s.replace(/\b(crown|pessoal|ontem|hoje|d[oó]lares?|reais|bucks|usd|na conta|da conta)\b/gi,' ').replace(/\s+/g,' ').trim();
+  let prev; do{prev=d;d=d.replace(/^(de|da|do|das|dos|pela|pelo|me|com|no|na|em|pra|para|gastei|paguei|comprei|foi|o|a|um|uma|entrou|recebi|recebido|caiu|ganhei|depositei|deposito|entrada|hoje)\s+/i,'').trim()}while(d!==prev);
+  d=d.replace(/^[-–:,.\s]+|[-–:,.\s]+$/g,'');
+  return d?d.charAt(0).toUpperCase()+d.slice(1):'';
+}
+function guess(n){
+  let rule=null;
+  for(const r of RULES){ if(r.k.some(k=>has(n,k))){rule=r;break} }
+  let hint=rule?rule.hint:'';
+  if(CROWN_WORDS.some(w=>has(n,w))) hint='crown';
+  return {rule,hint};
+}
+
+function payers(){const seen={},out=[];for(const t of [...S.tx].sort((a,b)=>b.ts-a.ts)){if(t.kind!=='entrada'||!t.desc||t.desc==='Entrada'||t.desc==='Sem nome')continue;const k=norm(t.desc);if(!seen[k]){seen[k]=1;out.push(t.desc)}}return out}
+function srcName(name){const k=norm(name);const hit=payers().find(p=>norm(p)===k);return hit||name}
+
+/* ---------- armazenamento ---------- */
+const S={tx:[],bills:[],mode:'local',live:[],typing:0,slow:false,mem:{notes:[],learned:{},hist:[]}};
+const LS='nina-fin-v1';
+let txCol=null,billCol=null,msgCol=null,memDoc=null;
+function loadLocal(){try{const j=JSON.parse(localStorage.getItem(LS)||'{}');S.tx=j.tx||[];S.bills=j.bills||[];S.live=j.msgs||[];if(j.mem)S.mem=fixMem(j.mem)}catch(e){}}
+function saveLocal(){if(S.mode!=='local')return;try{localStorage.setItem(LS,JSON.stringify({tx:S.tx,bills:S.bills,msgs:S.live.filter(m=>!m.temp).slice(-300),mem:S.mem}))}catch(e){}}
+function fixMem(m0){let m;try{m=JSON.parse(JSON.stringify(m0||{}))}catch(e){m={}}let L={};if(m&&Array.isArray(m.learnedList))for(const x of m.learnedList){if(x&&x.k)L[x.k]={acc:x.acc,cat:x.cat,n:x.n||1}}else if(m&&m.learned&&typeof m.learned==='object')L=m.learned;
+  return {notes:Array.isArray(m&&m.notes)?m.notes:[],learned:L,hist:Array.isArray(m&&m.hist)?m.hist:[]}}
+let memTimer=null;
+function saveMem(){clearTimeout(memTimer);memTimer=setTimeout(()=>{if(memDoc){memDoc.set({notes:S.mem.notes.slice(-60),learnedList:Object.entries(S.mem.learned).map(([k,v])=>({k,acc:v.acc,cat:v.cat,n:v.n})),hist:S.mem.hist.slice(-30)}).catch(()=>{})}else saveLocal()},600)}
+function putMsg(m){if(m.temp)return;if(msgCol){const c={...m};delete c.key;msgCol.doc(m.key).set(c).catch(()=>{})}else saveLocal()}
+function removeLive(key){S.live=S.live.filter(m=>m.key!==key);if(msgCol){msgCol.doc(key).delete().catch(()=>{})}else saveLocal()}
+function putTx(tx){const i=S.tx.findIndex(t=>t.id===tx.id);if(i>-1)S.tx[i]=tx;else S.tx.push(tx);
+  if(txCol){txCol.doc(tx.id).set(stripId(tx)).catch(dbErr)}else saveLocal()}
+function delTx(id){S.tx=S.tx.filter(t=>t.id!==id);if(txCol){txCol.doc(id).delete().catch(dbErr)}else saveLocal()}
+function putBill(b){const i=S.bills.findIndex(t=>t.id===b.id);if(i>-1)S.bills[i]=b;else S.bills.push(b);
+  if(billCol){billCol.doc(b.id).set(stripId(b)).catch(dbErr)}else saveLocal()}
+function delBill(id){S.bills=S.bills.filter(t=>t.id!==id);if(billCol){billCol.doc(id).delete().catch(dbErr)}else saveLocal()}
+function stripId(o){const c={...o};delete c.id;return c}
+function dbErr(){addLive('bot','<p>Não consegui salvar agora 😕 Confere sua conexão e tenta de novo.</p>',{temp:true})}
+
+function recoverLast(){try{
+  const all=[...S.live].sort((a,b)=>a.ts-b.ts), last=all[all.length-1];
+  if(last&&last.who==='me'&&Date.now()-last.ts<6*3600e3&&!S.pend.length){
+    const txt=String(last.html||'').replace(/<[^>]*>/g,'').trim();
+    if(txt){removeLive(last.key); handle(txt)}
+  }}catch(e){}}
+S.conn='wait';
+function setConn(c){S.conn=c;const b=$('#connbar');
+  if(c==='wait'){b.hidden=false;b.className='connbar';b.innerHTML='Carregando seus dados salvos…'}
+  else if(c==='local'){b.hidden=false;b.className='connbar bad';b.innerHTML='<strong>Seus dados salvos não carregaram.</strong> Essa tela não está conectada à sua conta, então o que você lançar aqui não fica salvo lá. Feche e abra a Nina pelo cartão <strong>Nina Finanças</strong> dentro do Claude.'}
+  else {b.hidden=true}
+  renderChat()}
+async function initStore(){
+  if(window.NINA_APP){loadLocal();renderAll();setConn('ok');setTimeout(recoverLast,600);return}
+  loadLocal(); renderAll();
+  setConn('wait');
+  const giveUp=setTimeout(()=>{if(S.conn!=='db')setConn('local')},12000);
+  try{
+    if(!window.claude||!window.claude.use){clearTimeout(giveUp);return setConn('local')}
+    const [db,user]=await Promise.all([window.claude.use('db'),window.claude.use('user')]);
+    const id=user?await user.id():null;
+    if(!db||!id){clearTimeout(giveUp);return setConn('local')}
+    const base=db.doc('data/users/'+id+'/fin');
+    const localTx=S.tx.slice(), localBills=S.bills.slice(), localMsgs=S.live.filter(m=>!m.temp), localMem=S.mem;
+    txCol=base.collection('tx'); billCol=base.collection('bills'); msgCol=base.collection('msgs'); memDoc=base.collection('meta').doc('mem'); S.mode='db';
+    let firstMsg=true, firstMem=true;
+    msgCol.onSnapshot(s=>{const temps=S.live.filter(m=>m.temp);
+      S.live=s.docs.map(d=>({...JSON.parse(JSON.stringify(d.data())),key:d.id})).concat(temps);
+      if(firstMsg){firstMsg=false;
+        setTimeout(recoverLast,800);
+        if(0)setTimeout(()=>{try{
+          const all=[...S.live].sort((a,b)=>a.ts-b.ts), last=all[all.length-1];
+          if(last&&last.who==='me'&&Date.now()-last.ts<6*3600e3&&!S.pend.length){
+            const txt=String(last.html||'').replace(/<[^>]*>/g,'').trim();
+            if(txt){addLive('bot','<p>Desculpa, eu tinha travado e não te respondi 😕 Já resolvi aqui. Vou responder sua última mensagem:</p>');
+              removeLive(last.key); handle(txt)}
+          }}catch(e){}},800);
+        if(s.empty&&localMsgs.length){localMsgs.forEach(m=>{S.live.push(m);putMsg(m)})}
+        const saved=s.docs.map(d=>({key:d.id,ts:d.data().ts||0})).sort((a,b)=>a.ts-b.ts);
+        if(saved.length>300) saved.slice(0,saved.length-300).forEach(x=>msgCol.doc(x.key).delete().catch(()=>{}));
+      }
+      renderAll()},()=>{});
+    memDoc.onSnapshot(d=>{if(d.exists)S.mem=fixMem(d.data());
+      else if(firstMem&&(localMem.notes.length||Object.keys(localMem.learned).length)){S.mem=localMem;saveMem()}
+      firstMem=false},()=>{});
+    let firstTx=true, firstBill=true;
+    txCol.onSnapshot(s=>{S.tx=s.docs.map(d=>({...JSON.parse(JSON.stringify(d.data())),id:d.id}));if(S.conn!=='db'){clearTimeout(giveUp);setConn('db')}
+      if(firstTx){firstTx=false; if(s.empty&&localTx.length){localTx.forEach(t=>putTx(t))}}
+      renderAll()},()=>{});
+    billCol.onSnapshot(s=>{S.bills=s.docs.map(d=>({...JSON.parse(JSON.stringify(d.data())),id:d.id}));
+      if(firstBill){firstBill=false; if(s.empty&&localBills.length){localBills.forEach(b=>putBill(b))}}
+      renderAll()},()=>{});
+  }catch(e){clearTimeout(giveUp);setConn('local')}
+}
+
+/* ---------- cálculos ---------- */
+const gastos=()=>S.tx.filter(t=>t.kind==='gasto');
+const affects=t=>!(t.kind==='entrada'&&t.noBal);
+function balances(){const b={crown:0,pessoal:0};for(const t of S.tx){if(!affects(t))continue;b[t.acc]+= t.kind==='gasto'?-t.amount:t.amount}return b}
+const everSetBalance=()=>S.tx.some(t=>t.kind==='ajuste'||t.kind==='entrada');
+function dayTotals(date){const g=gastos().filter(t=>t.date===date);const r={total:0,crown:0,pessoal:0,n:g.length,byCat:{}};
+  for(const t of g){r.total+=t.amount;r[t.acc]+=t.amount;r.byCat[t.cat]=(r.byCat[t.cat]||0)+t.amount}return r}
+function weekBills(){const t=today(),lim=addDays(t,7);return S.bills.filter(b=>b.venc<=lim).sort((a,b)=>a.venc.localeCompare(b.venc))}
+
+/* ---------- conversa ---------- */
+const sessionStart=Date.now();
+const seen=new Set(); let rendered=false;
+function addLive(who,html,extra){const m={key:'l'+uid(),who,html,ts:Date.now(),...(extra||{})};S.live.push(m);putMsg(m);renderChat();return m}
+
+function buildTimeline(){
+  const items=[{ts:0,key:'welcome',type:'welcome'}];
+  const sorted=[...S.tx].sort((a,b)=>a.ts-b.ts);
+  const bal={crown:0,pessoal:0}, dayAcc={}, monthCat={}, prevMonthCat={};
+  for(const t of gastos()){const mk=t.date.slice(0,7);prevMonthCat[mk+'|'+t.cat]=(prevMonthCat[mk+'|'+t.cat]||0)+t.amount}
+  for(const t of sorted){
+    if(affects(t)) bal[t.acc]+= t.kind==='gasto'?-t.amount:t.amount;
+    let dayTotal=0, insight='';
+    if(t.kind==='gasto'){
+      const k=t.date+'|'+t.acc; dayAcc[k]=(dayAcc[k]||0)+t.amount; dayTotal=dayAcc[k];
+      const mk=t.date.slice(0,7), ck=mk+'|'+t.cat; const before=monthCat[ck]||0; monthCat[ck]=before+t.amount;
+      const pd=pdate(t.date); pd.setDate(1); pd.setMonth(pd.getMonth()-1);
+      const last=prevMonthCat[dstr(pd).slice(0,7)+'|'+t.cat]||0;
+      if(last>0&&before<=last&&monthCat[ck]>last) insight=`Ei, com ${CAT[t.cat]?.n||'isso'} você já passou o mês passado inteiro (${money(last)}). Bora segurar um pouco? 😉`;
+    }
+    items.push({ts:t.ts,key:'tx'+t.id,type:'tx',tx:t,bal:bal[t.acc],dayTotal,insight});
+  }
+  // fechamento do dia
+  const t0=today(), now=new Date();
+  const days=[...new Set(gastos().map(t=>t.date))].sort();
+  for(const d of days){
+    if(d>t0) continue;
+    if(d===t0&&now.getHours()<21) continue;
+    const end=pdate(d); end.setHours(23,59,59);
+    const lastTs=Math.max(...gastos().filter(t=>t.date===d).map(t=>t.ts));
+    items.push({ts:Math.max(end.getTime(),lastTs+1),key:'close'+d,type:'close',date:d});
+  }
+  for(const m of S.live) items.push({ts:m.ts,key:m.key,type:'live',m});
+  const wb=weekBills();
+  if(wb.length) items.push({ts:sessionStart,key:'remind',type:'remind',bills:wb});
+  items.sort((a,b)=>a.ts-b.ts);
+  S.pend.forEach((p,i)=>items.push({ts:9e15+i,key:'pend'+p.id+(p.acc||'')+(p.needSrc?'s':''),type:'pending',p}));
+  return items;
+}
+
+function botRow(inner,cont,extraCls){return `<div class="row bot${cont?' cont':''}${extraCls?' '+extraCls:''}"><div class="avatar sm" aria-hidden="true">N</div><div class="bub">${inner}</div></div>`}
+function meRow(text,ts){return `<div class="row me"><div class="bub"><p>${esc(text)}</p><div class="t">${hhmm(ts)} ✓✓</div></div></div>`}
+
+function welcomeHtml(){
+  const set=everSetBalance();
+  return botRow(`<p class="lead">Oi! Eu sou a Nina 👋</p>
+  <p>Pode falar comigo do seu jeito, como se fosse no WhatsApp. Eu entendo e anoto tudo:</p>
+  <p>• <strong>45 gasolina van</strong><br>• <strong>132,50 walmart</strong><br>• <strong>800 cheque funcionário</strong><br>• <strong>300 mandei pro Brasil</strong><br>• <strong>recebi 2500 da ABC Construction</strong> (dinheiro que entrou, com quem pagou)</p>
+  <p>Também pode me perguntar coisas tipo <strong>quanto gastei de gasolina esse mês?</strong>, <strong>quem me pagou mais em setembro?</strong> ou <strong>tô gastando muito no mercado?</strong></p>${window.NINA_APP&&!lsGet(KEY_LS)?'<p style="font-size:13px;color:var(--muted)">💡 Pra eu entender qualquer frase, ligue a inteligência em <strong>⚙️ Ajustes</strong>. Sem ela eu entendo o jeito simples.</p>':''}<p>Eu pergunto de qual conta saiu quando não tiver certeza, separo por categoria e te digo quanto sobrou. Toda noite eu fecho o dia pra você.</p>
+  ${set?'':`<div class="choices"><button class="btn gold" data-act="saldos">Informar quanto tenho nas contas</button></div>`}`);
+}
+
+function receiptHtml(it){
+  const t=it.tx, c=CAT[t.cat]||CAT.outros, k=ac(t.acc);
+  if(t.kind==='ajuste'){
+    const rel=t.desc==='Ajuste';
+    const head=rel?(t.amount<0?`Tirei ${money(-t.amount)} da ${accName(t.acc)}`:`Somei ${money(t.amount)} na ${accName(t.acc)}`):`Saldo da ${accName(t.acc)} atualizado`;
+    return botRow(`${t.raw?'':''}<div class="rc"><div class="line"><div class="ico ${k}">🧮</div><div class="what"><div class="d">${head}</div><div class="k">Agora a conta tem</div></div><div class="amt num">${money(it.bal)}</div></div>
+      <div class="acts"><button class="lnk" data-edit="${esc(t.id)}">Desfazer ou editar</button><div class="t">${hhmm(t.ts)}</div></div></div>`);
+  }
+  const plus=t.kind==='entrada';
+  const lead=plus?pick(['Opa, dinheiro entrando! 💰','Aí sim! Entrada anotada 🙌','Boa! Já somei no saldo 💸'],t.id)
+                 :pick(['Anotado! ✍️','Prontinho, tá lançado.','Feito, já tá no caixa 👍','Registrado!','Beleza, anotei aqui.'],t.id);
+  const dateNote=t.date!==dstr(new Date(t.ts))?` · ${dayLabel(t.date).toLowerCase()}`:'';
+  return botRow(`<p class="lead">${lead}</p>
+  <div class="rc">
+    <div class="line"><div class="ico ${k}">${c.i}</div>
+      <div class="what"><div class="d">${plus?(['Entrada','Sem nome'].includes(t.desc)?'Entrada de dinheiro':'Recebido de '+esc(t.desc)):esc(t.desc)}</div><div class="k">${plus?'Pagamento recebido':esc(c.n)}${dateNote}</div></div>
+      <div class="amt num ${plus?'plus':'minus'}">${plus?'+':''}${money(t.amount)}</div></div>
+    <div class="foot">
+      <span>Conta</span><span><span class="tag ${k}">${accName(t.acc)}</span></span>
+      ${plus?'':`<span>Gasto hoje na ${accName(t.acc)}</span><span>${money(it.dayTotal)}</span>`}
+      ${plus&&t.noBal?`<span>Saldo</span><span style="font-weight:500;color:var(--muted)">não mexi</span>`:`<span>Saldo ${accName(t.acc)}</span><span class="${it.bal<0?'neg':''}">${money(it.bal)}</span>`}
+    </div>
+    ${plus&&t.noBal?`<div class="note">📒 Anotado só no controle de <strong>Entradas</strong>. O saldo da ${accName(t.acc)} continua o mesmo.</div>`:''}
+    ${it.bal<0&&!(plus&&t.noBal)?`<div class="note warn">⚠️ A conta ${accName(t.acc)} ficou no negativo. Se o saldo estiver diferente, atualiza em "Saldos".</div>`:''}
+    ${it.insight?`<div class="note">${esc(it.insight)}</div>`:''}
+    <div class="acts"><button class="lnk" data-edit="${esc(t.id)}">Editar</button><div class="t">${hhmm(t.ts)}</div></div>
+  </div>`,true);
+}
+
+function closeHtml(d){
+  const r=dayTotals(d);
+  const top=Object.entries(r.byCat).sort((a,b)=>b[1]-a[1])[0];
+  let sum=0,cnt=0; for(let i=1;i<=7;i++){sum+=dayTotals(addDays(d,-i)).total;cnt++}
+  const avg=sum/cnt;
+  let remark='';
+  if(avg>0){ remark = r.total<=avg*0.85 ? `Gastou menos que a média dos últimos 7 dias (${money(avg)}). Mandou bem! 👏`
+       : r.total>=avg*1.3 ? `Dia mais pesado que o normal — a média tem sido ${money(avg)} por dia.`
+       : `Dentro da média dos últimos dias (${money(avg)}).`; }
+  const cw=r.total?r.crown/r.total*100:0;
+  return `<div class="card"><div class="hd"><div class="avatar sm" aria-hidden="true">N</div><div class="tt">Fechamento do dia</div><div class="sub">${esc(shortDate(d))}</div></div>
+   <div class="bd"><div><div style="font-size:12.5px;color:var(--muted)">Total gasto no dia</div><div class="big num">${money(r.total)}</div></div>
+   <div class="split" aria-hidden="true"><div class="c" style="width:${cw}%"></div><div class="p" style="width:${100-cw}%"></div></div>
+   <div class="kv"><span class="dim">Crown</span><span>${money(r.crown)}</span><span class="dim">Pessoal</span><span>${money(r.pessoal)}</span>
+   ${top?`<span class="dim">Onde mais gastou</span><span>${CAT[top[0]]?.i||''} ${esc(CAT[top[0]]?.n||'')}</span>`:''}
+   <span class="dim">Lançamentos</span><span>${r.n}</span></div>
+   ${remark?`<div class="note">${remark}</div>`:''}</div></div>`;
+}
+
+/* lembrete humanizado da semana */
+const WDS=['domingo','segunda','terça','quarta','quinta','sexta','sábado'];
+function joinPt(a){return a.length<2?a.join(''):a.slice(0,-1).join(', ')+' e '+a[a.length-1]}
+function dayPhrase(v){const t=today(),dd=diffDays(t,v),d=pdate(v);
+  if(dd<0) return `já passou (era ${WDS[d.getDay()]}, dia ${d.getDate()})`;
+  if(dd===0) return 'hoje'; if(dd===1) return `amanhã (${WDS[d.getDay()]}, dia ${d.getDate()})`;
+  return `${WDS[d.getDay()]}, dia ${d.getDate()}`}
+function weekStory(bills){
+  if(!bills.length) return '<p>Essa semana tá tranquila: nenhuma conta vencendo nos próximos 7 dias. Aproveita pra deixar um dinheirinho guardado 😉</p>';
+  const t=today(), h=new Date().getHours(), b=balances();
+  const tot=bills.reduce((s,x)=>s+x.valor,0), late=bills.filter(x=>x.venc<t);
+  const byDay={}; for(const x of bills){(byDay[x.venc]=byDay[x.venc]||[]).push(x)}
+  const days=Object.keys(byDay).sort();
+  const big=[...bills].sort((a,b)=>b.valor-a.valor)[0];
+  let out=`<p>${h<12?'Bom dia':h<18?'Boa tarde':'Boa noite'}! Dei uma olhada nas suas contas: ${bills.length===1?'essa semana tem <strong>uma conta</strong>':`essa semana são <strong>${bills.length} contas</strong>`}, somando <strong>${money(tot)}</strong>.</p>`;
+  if(late.length) out+=`<p>⚠️ Antes de tudo: ${late.length===1?`<strong>${esc(late[0].nome)}</strong> (${money(late[0].valor)}) já venceu`:`${late.length} contas já venceram (${joinPt(late.map(x=>esc(x.nome)))})`}. Se já pagou, é só marcar como paga na aba Contas.</p>`;
+  out+='<p>Como fica a semana:</p><p>'+days.filter(d=>d>=t).map(d=>{const l=byDay[d];const sub=l.reduce((s,x)=>s+x.valor,0);
+    const ph=dayPhrase(d);
+    return `• <strong>${ph.charAt(0).toUpperCase()+ph.slice(1)}</strong>: ${joinPt(l.map(x=>`${esc(x.nome)} (${money(x.valor)})`))}${l.length>1?` — ${money(sub)} nesse dia`:''}`}).join('<br>')+'</p>';
+  const acc=['crown','pessoal'].map(a=>{const need=bills.filter(x=>x.acc===a).reduce((s,x)=>s+x.valor,0);if(!need)return '';
+    const have=b[a];
+    return have>=need?`Da <strong>${accName(a)}</strong> saem ${money(need)}. Você tem ${money(have)} lá, então dá tranquilo e ainda sobram ${money(have-need)}.`
+      :`Da <strong>${accName(a)}</strong> saem ${money(need)}, mas o saldo lá é ${money(have)}. Vai precisar de mais <strong>${money(need-have)}</strong> pra fechar.`}).filter(Boolean);
+  if(acc.length) out+=`<p>${acc.join(' ')}</p>`;
+  if(bills.length>1) out+=`<p>A mais pesada é <strong>${esc(big.nome)}</strong> (${money(big.valor)}), ${dayPhrase(big.venc)}. Se quiser, me fala quando pagar que eu lanço pra você.</p>`;
+  else out+=`<p>Quando pagar, me fala que eu lanço pra você.</p>`;
+  return out;
+}
+function remindHtml(bills){
+  return `<div class="card"><div class="hd"><div class="avatar sm" aria-hidden="true">N</div><div class="tt">Suas contas da semana</div></div>
+  <div class="bd"><div style="line-height:1.5;display:flex;flex-direction:column;gap:8px">${weekStory(bills)}</div>
+  <button class="btn ghost" data-act="tabcontas">Ver contas</button></div></div>`;
+}
+function remindHtmlOld(bills){
+  const t=today(); let tot=0;
+  const rows=bills.map(b=>{tot+=b.valor;const late=b.venc<t;const d=pdate(b.venc);
+    return `<div class="billrow"><div class="datechip ${late?'late':''}"><b>${d.getDate()}</b><small>${MES[d.getMonth()]}</small></div>
+    <div style="min-width:0"><div style="font-weight:600">${esc(b.nome)}</div><div style="font-size:12px;color:var(--muted)">${late?'atrasada · ':''}${accName(b.acc)}</div></div>
+    <div class="num" style="font-weight:700">${money(b.valor)}</div></div>`}).join('');
+  return `<div class="card"><div class="hd"><div class="avatar sm" aria-hidden="true">N</div><div class="tt">Essa semana tem conta pra pagar</div></div>
+  <div class="bd">${rows}<div class="kv" style="border-top:1px dashed var(--line);padding-top:8px"><span class="dim">Total</span><span>${money(tot)}</span></div>
+  <button class="btn ghost" data-act="tabcontas">Ver contas</button></div></div>`;
+}
+
+function pendingHtml(p){ const v=p.kind==='entrada'||(p.kind==='ajuste'&&p.amount>0)?'+'+money(Math.abs(p.amount)):(p.kind==='ajuste'?'−'+money(-p.amount):money(p.amount));
+  if(!p.acc){
+    const sug=p.hint;
+    const q=p.kind==='entrada'?'Entrou em qual conta?':p.kind==='ajuste'?(p.amount<0?'Tiro de qual conta?':'Somo em qual conta?'):'Saiu de qual conta?';
+    return botRow(`<p><strong>${esc(p.desc)}</strong> · <span class="num">${v}</span></p><p>${q}</p>
+      <div class="choices">
+        <button class="choice c ${sug==='crown'?'sug':''}" data-pid="${p.id}" data-acc="crown"><span class="cn"><i></i>Crown</span><small>${sug==='crown'?'acho que é essa':'empresa'}</small></button>
+        <button class="choice p ${sug==='pessoal'?'sug':''}" data-pid="${p.id}" data-acc="pessoal"><span class="cn"><i></i>Pessoal</span><small>${sug==='pessoal'?'acho que é essa':'minha conta'}</small></button>
+      </div>`);
+  }
+  if(p.needSrc){
+    const ps=payers().slice(0,8);
+    return botRow(`<p>Boa! <strong class="num">+${money(p.amount)}</strong> na ${accName(p.acc)} 💰</p><p>Quem te pagou? Escreve o nome da companhia ou toca numa:</p>
+      ${ps.length?`<div class="catgrid">${ps.map(x=>`<button class="catbtn" data-pid="${p.id}" data-src="${esc(x)}"><span>🏢</span>${esc(x)}</button>`).join('')}</div>`:''}
+      <div class="choices"><button class="btn ghost" data-pid="${p.id}" data-src="Sem nome">Pular</button></div>`);
+  }
+  const cats=CATS.filter(c=>c.a===p.acc);
+  return botRow(`<p>Não reconheci a categoria de <strong>${esc(p.desc)}</strong>. Escolhe aí pra mim:</p>
+    <div class="catgrid">${cats.map(c=>`<button class="catbtn" data-pid="${p.id}" data-cat="${c.id}"><span>${c.i}</span>${esc(c.n)}</button>`).join('')}</div>`);
+}
+
+function renderChat(){
+  const box=$('#msgs'); const items=buildTimeline(); let html='', lastDay=null, lastWho=null;
+  const newCount=items.filter(it=>!seen.has(it.key)).length; const animate=rendered&&newCount<=3; rendered=true;
+  for(const it of items){
+    if(it.ts>0&&it.ts<9e15){const d=dstr(new Date(it.ts)); if(d!==lastDay){html+=`<div class="daysep">${esc(dayLabel(d))}</div>`;lastDay=d;lastWho=null}}
+    let h='';
+    try{
+    if(it.type==='welcome'){h=welcomeHtml();lastWho='bot'}
+    else if(it.type==='tx'){
+      if(it.tx.raw){h+=meRow(it.tx.raw,it.tx.ts)}
+      h+=receiptHtml(it); lastWho='bot';
+    }
+    else if(it.type==='close'){h=closeHtml(it.date);lastWho=null}
+    else if(it.type==='remind'){h=remindHtml(it.bills);lastWho=null}
+    else if(it.type==='live'){h=it.m.who==='me'?meRow(it.m.html,it.m.ts):botRow(it.m.html+`<div class="t">${hhmm(it.m.ts)}</div>`,lastWho==='bot');lastWho=it.m.who}
+    else if(it.type==='pending'){h=pendingHtml(it.p);lastWho='bot'}
+    }catch(err){h=''}
+    const isNew=!seen.has(it.key); seen.add(it.key);
+    html+= isNew&&animate ? h.replace(/class="(row|card)/g,'class="in $1') : h;
+  }
+  if(S.typing>0) html+=`<div class="row bot typing in"><div class="avatar sm" aria-hidden="true">N</div><div class="bub"><div class="dots"><span></span><span></span><span></span></div>
+    ${S.slow?`<p style="font-size:12.5px;color:var(--muted);margin-top:8px">Tá demorando… pode ser a internet.</p><div class="choices"><button class="btn ghost" data-noai>Responder sem a IA</button></div>`:''}</div></div>`;
+  box.innerHTML=html;
+  requestAnimationFrame(()=>{box.scrollTop=box.scrollHeight});
+  const st=$('#status'); st.textContent=S.typing>0?'digitando…':(sampleFn&&!aiOff?'sua assistente financeira · online':'sua assistente financeira · modo simples'); st.classList.toggle('typing',S.typing>0);
+}
+
+function nina(fn,delay){S.typing++;renderChat();setTimeout(()=>{S.typing=Math.max(0,S.typing-1);try{fn()}catch(e){addLive('bot','<p>Ops, me enrolei aqui 😅 Manda de novo?</p>',{temp:true})}renderAll()},delay??420)}
+
+/* ---------- entendimento: Nina com IA + modo simples ---------- */
+let sampleFn=null, aiOff=false, aiNoted=false;
+S.pend=[];
+function pushHist(who,text){const h=S.mem.hist;h.push({who,text:String(text).slice(0,400),d:today()});while(h.length>30)h.shift();saveMem()}
+const lkey=d=>norm(d).trim().split(' ').slice(0,4).join(' ');
+function learn(desc,acc,cat){const k=lkey(desc);if(!k)return;const o=S.mem.learned[k]||{n:0};S.mem.learned[k]={acc,cat,n:(o.acc===acc?o.n:0)+1};
+  const keys=Object.keys(S.mem.learned);if(keys.length>200)delete S.mem.learned[keys[0]];saveMem()}
+const learned=d=>S.mem.learned[lkey(d)]||null;
+const KEY_LS='nina-ai-key', MODEL_LS='nina-ai-model';
+function lsGet(k){try{return localStorage.getItem(k)||''}catch(e){return ''}}
+function lsSet(k,v){try{v?localStorage.setItem(k,v):localStorage.removeItem(k)}catch(e){}}
+function makeApiSample(key){
+  const call=async(prompt,opts)=>{
+    let r;
+    try{
+      r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',signal:opts&&opts.signal,
+        headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+        body:JSON.stringify({model:lsGet(MODEL_LS)||'claude-haiku-5-5',max_tokens:1500,messages:[{role:'user',content:prompt+'\n\nResponda apenas com o JSON.'}]})});
+    }catch(e){throw {code:(e&&e.name==='AbortError')?'cancelled':'upstream_error',message:String(e&&e.message||e)}}
+    if(r.status===401||r.status===403) throw {code:'bad_key'};
+    if(r.status===429) throw {code:'rate_limited'};
+    if(r.status===400){let m='';try{m=(await r.json()).error.message}catch(e){} throw {code:/credit|balance|billing/i.test(m)?'no_credit':'upstream_error',message:m}}
+    if(!r.ok) throw {code:'upstream_error',message:'HTTP '+r.status};
+    const data=await r.json();
+    const text=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
+    try{return JSON.parse(text)}catch(e){}
+    const a=text.indexOf('{'),b=text.lastIndexOf('}');
+    if(a>-1&&b>a){try{return JSON.parse(text.slice(a,b+1))}catch(e){}}
+    throw {code:'invalid_json',text};
+  };
+  const fn=async(p,o)=>({text:JSON.stringify(await call(p,o))});
+  fn.json=call; return fn;
+}
+async function initAI(){
+  if(window.NINA_APP){const k=lsGet(KEY_LS);sampleFn=k?makeApiSample(k):null;aiOff=false;aiFails=0;aiNoted=false;renderChat();return}
+  try{if(window.claude&&window.claude.use){sampleFn=await window.claude.use('sample')}}catch(e){sampleFn=null}}
+
+const APP_VER='app-1.0';
+function handle(raw){
+  try{ return handleInner(raw) }catch(err){
+    S.typing=0; addLive('bot',`<p>Ops, deu um erro aqui e eu travei 😕 Manda de novo, por favor.</p><p style="font-size:11.5px;color:var(--muted)">${APP_VER} · ${esc(String(err&&err.message||err).slice(0,140))}</p>`,{temp:true}); renderAll() }
+}
+function handleInner(raw){
+  const text=raw.trim(); if(!text) return;
+  const n=norm(text);
+  // respostas rápidas para o que a Nina perguntou
+  const wSrc=S.pend.find(p=>p.needSrc), wAcc=S.pend.find(p=>!p.acc);
+  if(wSrc&&!parseAmount(text)&&text.split(/\s+/).length<=5){wSrc.desc=srcName(cleanDesc(text)||text);return nina(()=>finish(wSrc.id,'entrada'),250)}
+  if(wAcc){
+    if(/^ (crown|c|empresa|da crown|na crown|foi da crown|crown mesmo) $/.test(n)){return nina(()=>chooseAcc(wAcc.id,'crown'),250)}
+    if(/^ (pessoal|p|minha|minha conta|da pessoal|na pessoal|foi pessoal|pessoal mesmo) $/.test(n)){return nina(()=>chooseAcc(wAcc.id,'pessoal'),250)}
+  }
+  const live=addLive('me',text);
+  pushHist('ele',text);
+  // atalhos dos botões: rápidos e sem gastar nada
+  const cmd=n.trim();
+  const simple={'saldo':()=>cmdSaldo(),'saldos':()=>cmdSaldo(),'hoje':cmdHoje,'mes':cmdMes,'contas':cmdContas,'contas da semana':cmdContas,'desfazer':cmdUndo,'ajuda':cmdAjuda};
+  if(!parseAmount(text)&&cmd.split(' ').length<=7&&/^ ?(oi|ola|opa|alo|hey|e ai|eai|fala|bom dia|boa tarde|boa noite|nina|oi nina|ola nina)( nina)? ?$| (voce|vc|ce|tu) (ta|esta|tá|tah) ai | (ta|esta) ai | tem alguem ai | (ta|esta|tah) funcionando | funciona | me ouve | ta me ouvindo /.test(' '+cmd+' ')) return nina(cmdOi,350);
+  if(cmd==='memoria'){removeLive(live.key);S.mem.hist.pop();return openMemory()}
+  if(simple[cmd]) return nina(simple[cmd]);
+  if(sampleFn&&!aiOff) return askAI(text,live);
+  nina(()=>localHandle(text,live));
+}
+
+/* modo simples (sem IA): o entendimento por palavras-chave */
+function localHandle(text,live){
+  const n=norm(text), cmd=n.trim();
+  const setM=cmd.match(/^saldo (crown|pessoal) (.+)$/);
+  const a=parseAmount(text);
+  if(setM&&a) return setBalance(setM[1],a.v);
+  if(a&&/ (tira|tire|retira|retire|remove|remova|desconta|desconte|subtrai|subtraia|diminui|diminua|abate|abata|tirar|retirar|descontar) /.test(n)&&/ (saldo|total|conta|crown|pessoal) /.test(n)&&!/ (gastei|paguei|comprei) /.test(n))
+    return queuePending({kind:'ajuste',amount:-a.v,desc:'Ajuste',raw:text,date:today(),ts:live.ts,liveKey:live.key,accPre:has(n,'crown')?'crown':has(n,'pessoal')?'pessoal':null});
+  if(a&&/ (soma|some|adiciona|adicione|acrescenta|acrescente|bota|coloca|aumenta) /.test(n)&&/ (saldo|total|conta) /.test(n))
+    return queuePending({kind:'ajuste',amount:a.v,desc:'Ajuste',raw:text,date:today(),ts:live.ts,liveKey:live.key,accPre:has(n,'crown')?'crown':has(n,'pessoal')?'pessoal':null});
+  const simple={'resumo':cmdHoje,'apagar':cmdUndo,'apaga':cmdUndo,'oi':cmdOi,'ola':cmdOi,'bom dia':cmdOi,'boa tarde':cmdOi,'boa noite':cmdOi,'eai':cmdOi,'e ai':cmdOi,'fala':cmdOi};
+  if(simple[cmd]) return simple[cmd]();
+  if(!a){
+    const accQ=has(n,'crown')||has(n,'empresa')?'crown':has(n,'pessoal')?'pessoal':null;
+    if(/ (quanto|o que|oque) .*(pagar|devo|vence)| contas? (da|dessa|desta|na) semana /.test(n)) return cmdContas();
+    if(/ quanto .*gast/.test(n)||/ gastos? (de )?(hoje|do mes|desse mes|deste mes|no mes) /.test(n)) return (/ mes /.test(n)?cmdMes:cmdHoje)();
+    if(/ quanto (eu )?(recebi|entrou|ganhei)| recebimentos? | entradas | quem (me )?pag(ou|aram) | de onde (vem|veio|ta vindo|esta vindo) /.test(n)) return cmdReceb();
+    if(/ saldo | quanto (eu )?(tenho|tem|sobrou|ficou|resta|restou|ta|esta)| (tenho|tem) na conta | meu dinheiro /.test(n)) return cmdSaldo(accQ);
+    return addLive('bot',`<p>Não achei o valor aí 🤔</p><p>Me manda assim: <strong>valor + o que foi</strong>. Ex: <strong>25 almoço</strong> ou <strong>60 gasolina van</strong>.</p>`);
+  }
+  const isEntrada=/^ (entrou|recebimento|deposito|depositei|caiu|ganhei|entrada) /.test(n)||/ (recebi|recebido|me pagou|pagou|pagaram|me pagaram) /.test(n);
+  let desc=text.replace(a.match,' ');
+  if(isEntrada) desc=desc.replace(/\b(me\s+)?pag(ou|aram)\b/gi,' ').replace(/\b(recebi|recebido)\b/gi,' ');
+  if(isEntrada){const m=desc.match(/.*\b(?:da|do|das|dos|de|pela|pelo)\s+([a-zA-ZÀ-ÿ0-9&'. -]+?)\s*$/i);if(m&&m[1].trim())desc=m[1].trim()}
+  desc=cleanDesc(desc) || (isEntrada?'Entrada':'Gasto');
+  if(isEntrada&&desc!=='Entrada') desc=srcName(desc);
+  const acc=has(n,'crown')?'crown':has(n,'pessoal')?'pessoal':null;
+  const g=guess(norm(desc));
+  queuePending({kind:isEntrada?'entrada':'gasto',amount:a.v,desc,raw:text,date:has(n,'ontem')?addDays(today(),-1):today(),ts:live.ts,liveKey:live.key,rule:g.rule,hint:g.hint,accPre:acc,noBal:isEntrada&&!has(n,'saldo')});
+}
+
+/* fila de lançamentos esperando resposta */
+function queuePending(p){p.id=uid();p.acc=null;const L=learned(p.desc);if(L&&L.acc)p.hint=L.acc;S.pend.push(p);
+  if(p.accPre) return chooseAcc(p.id,p.accPre);
+  renderAll()}
+function chooseAcc(id,acc){
+  const p=S.pend.find(x=>x.id===id); if(!p) return; p.acc=acc;
+  if(p.kind==='ajuste') return finish(id,'ajuste');
+  if(p.kind==='entrada'){ if(p.desc==='Entrada'){p.needSrc=true;return renderAll()} return finish(id,'entrada'); }
+  const L=learned(p.desc); if(L&&L.acc===acc&&CAT[L.cat]&&CAT[L.cat].a===acc) return finish(id,L.cat);
+  if(p.catAI&&CAT[p.catAI]&&CAT[p.catAI].a===acc) return finish(id,p.catAI);
+  if(p.rule) return finish(id,p.rule[acc]);
+  renderAll();
+}
+function finish(id,cat){
+  const p=S.pend.find(x=>x.id===id); if(!p) return;
+  S.pend=S.pend.filter(x=>x.id!==id);
+  const tx={id:p.id,ts:p.ts,date:p.date,kind:p.kind,amount:p.amount,acc:p.acc,cat,desc:p.desc,raw:p.raw||''};
+  if(p.kind==='entrada'&&p.noBal) tx.noBal=true;
+  if(p.raw) removeLive(p.liveKey);
+  putTx(tx);
+  if(tx.kind!=='ajuste') learn(tx.desc,tx.acc,tx.cat);
+  pushHist('nina',`[lançado: ${tx.kind} ${money(tx.amount)} ${tx.desc} na ${accName(tx.acc)}]`);
+  renderAll();
+}
+function setBalance(acc,target){
+  const cur=balances()[acc]; const delta=Math.round((target-cur)*100)/100;
+  putTx({id:uid(),ts:Date.now(),date:today(),kind:'ajuste',amount:delta,acc,cat:'ajuste',desc:'Saldo informado',raw:''});
+}
+
+/* ---------- IA ---------- */
+const WD=['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
+function dataSummary(){
+  const t=today(), mk=t.slice(0,7); const pd=pdate(t); pd.setDate(1); pd.setMonth(pd.getMonth()-1); const lk=dstr(pd).slice(0,7);
+  const b=balances();
+  const sumBy=(key)=>{const r={};for(const x of gastos().filter(x=>x.date.startsWith(key))){const k=x.cat;r[k]=(r[k]||0)+x.amount}return Object.entries(r).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`${CAT[k]?.n||k}: ${v.toFixed(2)}`).join('; ')||'nada'};
+  const tot=(key,acc)=>gastos().filter(x=>x.date.startsWith(key)&&(!acc||x.acc===acc)).reduce((s,x)=>s+x.amount,0).toFixed(2);
+  const inc=(key)=>S.tx.filter(x=>x.kind==='entrada'&&x.date.startsWith(key)).reduce((s,x)=>s+x.amount,0).toFixed(2);
+  const recent=[...S.tx].filter(x=>x.kind!=='ajuste').sort((a,b)=>b.ts-a.ts).slice(0,25).map(x=>`${x.date} ${x.kind} ${x.amount.toFixed(2)} ${x.acc} ${x.kind==='gasto'?(CAT[x.cat]?.n||x.cat):''} "${x.desc}"`).join('\n')||'(nenhum)';
+  const bills=[...S.bills].sort((a,b)=>a.venc.localeCompare(b.venc)).slice(0,15).map(x=>`${x.venc} ${x.nome} ${x.valor.toFixed(2)} ${x.acc}`).join('\n')||'(nenhuma)';
+  return `SALDOS AGORA: crown ${b.crown.toFixed(2)} | pessoal ${b.pessoal.toFixed(2)}
+GASTOS ESTE MÊS (${mk}): total ${tot(mk)} (crown ${tot(mk,'crown')}, pessoal ${tot(mk,'pessoal')}) — por categoria: ${sumBy(mk)}
+GASTOS MÊS PASSADO (${lk}): total ${tot(lk)} — por categoria: ${sumBy(lk)}
+RECEBIDO ESTE MÊS: ${inc(mk)} | MÊS PASSADO: ${inc(lk)}
+QUEM JÁ PAGOU ELE: ${payers().slice(0,15).join(', ')||'(ninguém ainda)'}
+CONTAS A PAGAR (lembretes):
+${bills}
+ÚLTIMOS LANÇAMENTOS:
+${recent}`;
+}
+function aiPrompt(text){
+  const d=new Date();
+  const cats=CATS.map(c=>`${c.id}=${c.n}[${c.a}]`).join(', ');
+  const hist=S.mem.hist.slice(-21,-1).map(h=>`${h.d?'['+h.d+'] ':''}${h.who==='ele'?'ELE':'NINA'}: ${h.text}`).join('\n')||'(início)';
+  const notes=S.mem.notes.map((x,i)=>`- ${x.t}${x.d?' (anotado '+x.d+')':''}`).join('\n')||'(nada ainda)';
+  const learnedTxt=Object.entries(S.mem.learned).sort((a,b)=>b[1].n-a[1].n).slice(0,40).map(([k,v])=>`"${k}" → ${v.acc}, ${CAT[v.cat]?.n||v.cat}`).join('; ')||'(nada ainda)';
+  return `Você é a Nina, a assistente financeira dentro de um app de finanças. O dono do app é brasileiro, mora nos EUA (valores em dólar), e é dono da empresa Crown. Ele separa duas contas: "crown" (empresa) e "pessoal". Ele escreve em português informal, às vezes com erro de digitação, áudio transcrito ou mistura de inglês. Seu trabalho: entender o que ele quis dizer e devolver SÓ um objeto JSON com as ações para o app executar.
+
+HOJE: ${today()} (${WD[d.getDay()]}), ${pad(d.getHours())}:${pad(d.getMinutes())}
+
+DADOS DO APP:
+${dataSummary()}
+
+MEMÓRIA (coisas que ele te contou e pediu pra lembrar, de conversas anteriores):
+${notes}
+
+APRENDIDO COM OS LANÇAMENTOS (descrição → conta e categoria que ele costuma usar): ${learnedTxt}
+
+CATEGORIAS (id=nome[conta]): ${cats}
+
+TIPOS DE AÇÃO:
+- {"tipo":"gasto","valor":45.5,"descricao":"Gasolina da van","categoria":"comb_van","conta":"crown"|"pessoal"|null,"sugestao_conta":"crown"|"pessoal"|null,"data":"YYYY-MM-DD"}
+- {"tipo":"entrada","valor":2500,"de":"ABC Construction"|null,"conta":"crown"|"pessoal"|null,"data":"YYYY-MM-DD","somar_no_saldo":false}   (entrada é SÓ CONTROLE de quanto entrou e de onde; NÃO mexe no saldo. Só use "somar_no_saldo":true se ele pedir claramente pra somar no saldo)
+- {"tipo":"definir_saldo","conta":"crown"|"pessoal","valor":5000}   (o saldo PASSA A SER esse valor)
+- {"tipo":"ajustar_saldo","conta":"crown"|"pessoal"|null,"valor":-200}   (tira ou soma no saldo SEM ser gasto nem entrada; negativo = tirar)
+- {"tipo":"apagar","descricao":"walmart"|null,"valor":50|null,"data":"YYYY-MM-DD"|null}   (apaga UM lançamento específico que já existe)
+- {"tipo":"corrigir","descricao":"walmart"|null,"valor":50|null,"data":"YYYY-MM-DD"|null,"novo_valor":45|null,"nova_conta":"crown"|"pessoal"|null,"nova_descricao":"..."|null}
+- {"tipo":"consulta","titulo":"Gasto com gasolina em outubro","tipo_lanc":"gasto"|"entrada","de":"YYYY-MM-DD","ate":"YYYY-MM-DD","conta":"crown"|"pessoal"|null,"categorias":["id",...]|null,"texto":"walmart"|null,"agrupar":"categoria"|"origem"|"dia"|"mes"|"nenhum"}
+- {"tipo":"saldo","conta":"crown"|"pessoal"|null}
+- {"tipo":"contas_semana"}
+- {"tipo":"nova_conta_pagar","nome":"Seguro da van","valor":300,"vencimento":"YYYY-MM-DD","conta":"crown"|"pessoal","repete":true}
+- {"tipo":"apagar_ultimo"}
+- {"tipo":"abrir","tela":"graficos"|"contas"|"saldos"}
+- {"tipo":"lembrar","fato":"Carlos é funcionário da Crown, paga por cheque"}
+- {"tipo":"esquecer","fato":"texto parecido com o que está na MEMÓRIA"}
+
+REGRAS:
+- "Tira/retira/desconta/abate 200 do saldo/do total/da conta" = ajustar_saldo com valor negativo (NÃO é gasto, a não ser que ele diga com o que gastou). "Soma/coloca 200 no saldo" = ajustar_saldo positivo. Se ele não disse a conta, "conta": null que o app pergunta.
+- "Apaga/tira aquele gasto de 50 do Walmart", "esse lançamento tá errado, remove" = apagar (use descrição/valor/data dos ÚLTIMOS LANÇAMENTOS). "Era 45 e não 50" = corrigir.
+- IMPORTANTE: entradas ficam só no controle de Entradas; o saldo das contas ele mesmo informa (Saldos/definir_saldo). Nunca crie ajustar_saldo junto com uma entrada.
+- Gasto = dinheiro que saiu. Entrada = dinheiro que ele recebeu; "de" é quem pagou (companhia/cliente), null se ele não disse.
+- Vários gastos na mesma mensagem = uma ação para cada.
+- Conta: só preencha "conta" se ele disse claramente (crown/empresa ou pessoal) ou se for óbvio pelo contexto da conversa. Senão "conta": null e dê "sugestao_conta" (cheque de funcionário, gasolina/manutenção da van, material, ferramenta → crown; mercado, Walmart, envio pro Brasil, filho, lazer → pessoal).
+- "categoria": escolha o id mais adequado da lista para a conta (ou sugestão de conta). "descricao": curta e clara, com a primeira letra maiúscula.
+- Datas: "ontem", "segunda", "dia 10" → converta para YYYY-MM-DD; sem data = hoje.
+- Perguntas sobre quanto gastou/recebeu, com o quê, em qual período, de quem → use "consulta" (o app soma). Nunca faça contas de cabeça nem invente números.
+- "resposta": texto curto (1 a 3 frases) da Nina em português, jeito amigável e brasileiro. NUNCA chame ele de "cumpadre", "compadre" nem outro apelido; ele pediu pra não ser chamado assim. Use para conversar, tirar dúvidas, dar dicas ou opinião usando os DADOS acima. Deixe "" quando a mensagem for só lançamento ou consulta. Se não entender, peça para ele explicar de outro jeito.
+- Se ele corrigir algo ("não, era 50", "foi da crown"), use a CONVERSA RECENTE para entender; para corrigir um lançamento, apague o último e lance de novo.
+- Memória: quando ele contar algo útil pra lembrar depois (quem é funcionário, quem é cliente, metas, o nome do filho, que um gasto sempre é da Crown, um plano, uma preferência), use "lembrar" com uma frase curta e clara. Se ele pedir pra esquecer, use "esquecer". Não lembre o que já está na MEMÓRIA.
+- Use a MEMÓRIA, o APRENDIDO e a CONVERSA RECENTE (que inclui conversas de dias anteriores) para entender e responder. Se o APRENDIDO ou a MEMÓRIA disserem de qual conta é aquele gasto, pode preencher "conta".
+- Se ele perguntar o que você lembra ou sabe dele, responda com base na MEMÓRIA.
+- Valores sempre em dólar com $ (ex: $150,00). Nunca use R$.
+- Sem markdown, sem texto fora do JSON.
+
+FORMATO DA RESPOSTA: {"acoes":[...],"resposta":"..."}
+
+CONVERSA RECENTE:
+${hist}
+
+MENSAGEM AGORA: ${JSON.stringify(text)}`;
+}
+
+let aiBusy=false;
+let aiCtl=null, aiTimedOut=false, aiFails=0;
+async function askAI(text,live){
+  S.typing++; renderChat();
+  const ctl=new AbortController(); aiCtl=ctl;
+  const slowT=setTimeout(()=>{S.slow=true;renderChat()},12000);
+  const killT=setTimeout(()=>{aiTimedOut=true;ctl.abort()},30000);
+  let out;
+  try{
+    out=await sampleFn.json(aiPrompt(text),{modelTier:'quick',cache:false,signal:ctl.signal});
+  }catch(e){
+    clearTimeout(slowT);clearTimeout(killT);S.slow=false;S.typing=Math.max(0,S.typing-1);
+    const code=e&&e.code;
+    if(code==='bad_key'||code==='no_credit'){addLive('bot',code==='bad_key'?'<p>A chave da inteligência não funcionou 🔑 Confere ela em <strong>⚙️ Ajustes</strong>. Por enquanto respondi do jeito simples:</p>':'<p>Sua conta da inteligência está sem crédito 💳 Coloca crédito em console.anthropic.com. Por enquanto respondi do jeito simples:</p>',{temp:true});try{localHandle(text,live)}catch(x){}return renderAll()}
+    aiFails++; if(aiFails>=2&&code!=='cancelled'){aiOff=true}
+    if(aiTimedOut||aiFails>=2){aiTimedOut=false;
+      if(!aiNoted){aiNoted=true;addLive('bot',`<p style="font-size:13px;color:var(--muted)">A inteligência não respondeu${code&&code!=='cancelled'?' (código: '+esc(code)+')':''}, então respondi do jeito simples. ${aiOff?'Vou continuar no modo simples até você abrir o app de novo.':''}</p>`,{temp:true})}}
+    if(code==='cancelled'||code==='invalid_json'||code==='upstream_error'||code==='empty_completion'||code==='refused'){try{localHandle(text,live)}catch(x){addLive('bot','<p>Não entendi 🤔 Me fala de outro jeito?</p>')}return renderAll()}
+    if(['not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed'].includes(code)){aiOff=true;
+      if(!aiNoted){aiNoted=true;addLive('bot','<p>Sem permissão pra eu usar a inteligência agora, então vou no modo simples: me manda <strong>valor + o que foi</strong>, tipo <strong>45 gasolina van</strong>.</p>')}}
+    else if(code==='rate_limited'){addLive('bot','<p>Muita coisa de uma vez 😅 Espera um pouquinho e manda de novo. Enquanto isso entendi do jeito simples:</p>')}
+    try{localHandle(text,live)}catch(x){}
+    return renderAll();
+  }
+  clearTimeout(slowT);clearTimeout(killT);S.slow=false;S.typing=Math.max(0,S.typing-1);aiFails=0;
+  try{ runActions(out,text,live) }catch(err){ try{localHandle(text,live)}catch(x){addLive('bot','<p>Não entendi 🤔 Me fala de outro jeito?</p>')} }
+  renderAll();
+}
+
+const validAcc=a=>a==='crown'||a==='pessoal'?a:null;
+const validDate=d=>typeof d==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(d)&&!isNaN(pdate(d))?d:null;
+const num=v=>{const x=typeof v==='number'?v:parseFloat(String(v).replace(/[^\d.,-]/g,'').replace(',','.'));return isFinite(x)?Math.round(x*100)/100:null};
+
+function runActions(out,text,live){
+  const acts=Array.isArray(out&&out.acoes)?out.acoes:[];
+  const resp=typeof (out&&out.resposta)==='string'?out.resposta.trim():'';
+  let first=true, did=false, k=0;
+  const nextTs=()=>live.ts+(k++);
+  if(resp){addLive('bot',`<p>${esc(resp)}</p>`);pushHist('nina',resp);did=true}
+  for(const a of acts){
+    if(!a||typeof a!=='object') continue;
+    const tipo=String(a.tipo||'');
+    if(tipo==='gasto'||tipo==='entrada'){
+      const v=num(a.valor); if(!v||v<=0) continue;
+      const isE=tipo==='entrada';
+      let desc=isE?(a.de?srcName(String(a.de).trim()):'Entrada'):(String(a.descricao||'').trim()||'Gasto');
+      desc=desc.charAt(0).toUpperCase()+desc.slice(1);
+      const g=guess(norm(desc+' '+text));
+      const catAI=!isE&&CAT[a.categoria]&&CAT[a.categoria].a?a.categoria:null;
+      queuePending({kind:isE?'entrada':'gasto',noBal:isE&&a.somar_no_saldo!==true,amount:v,desc,raw:first?text:'',date:validDate(a.data)||today(),ts:nextTs(),liveKey:live.key,
+        rule:g.rule,catAI,hint:validAcc(a.sugestao_conta)||(catAI?CAT[catAI].a:'')||g.hint,accPre:validAcc(a.conta)});
+      first=false; did=true;
+    }
+    else if(tipo==='ajustar_saldo'){const v=num(a.valor);if(v){queuePending({kind:'ajuste',amount:v,desc:'Ajuste',raw:first?text:'',date:today(),ts:nextTs(),liveKey:live.key,accPre:validAcc(a.conta)});first=false;did=true}}
+    else if(tipo==='apagar'||tipo==='corrigir'){const t=findTx(a);
+      if(!t){addLive('bot','<p>Não achei esse lançamento 🤔 Me fala o valor e com o que foi, ou toca em <strong>Editar</strong> embaixo dele.</p>');did=true}
+      else if(tipo==='apagar'){delTx(t.id);addLive('bot',`<p>Apaguei: <strong>${esc(t.desc)}</strong>, ${money(t.amount)} da ${accName(t.acc)} (${esc(shortDate(t.date))}). Saldo da ${accName(t.acc)} agora: <strong>${money(balances()[t.acc])}</strong></p>`);did=true}
+      else{const nt={...t};const nv=num(a.novo_valor);if(nv&&nv>0)nt.amount=nv;const na=validAcc(a.nova_conta);
+        if(na&&na!==t.acc){nt.acc=na;if(nt.kind==='gasto'&&CAT[nt.cat]&&CAT[nt.cat].a!==na){const g=guess(norm(nt.desc)).rule;nt.cat=g?g[na]:(na==='crown'?'outros_crown':'outros')}}
+        if(a.nova_descricao)nt.desc=String(a.nova_descricao);putTx(nt);
+        addLive('bot',`<p>Corrigido: <strong>${esc(nt.desc)}</strong> agora é ${money(nt.amount)} na ${accName(nt.acc)}. Saldo da ${accName(nt.acc)}: <strong>${money(balances()[nt.acc])}</strong></p>`);did=true}}
+    else if(tipo==='definir_saldo'){const ac=validAcc(a.conta),v=num(a.valor);if(ac&&v!=null){setBalance(ac,v);did=true}}
+    else if(tipo==='consulta'){runQuery(a);did=true}
+    else if(tipo==='saldo'){cmdSaldo(validAcc(a.conta));did=true}
+    else if(tipo==='contas_semana'){cmdContas();did=true}
+    else if(tipo==='apagar_ultimo'){cmdUndo();did=true}
+    else if(tipo==='nova_conta_pagar'){const v=num(a.valor),venc=validDate(a.vencimento);
+      if(a.nome&&v&&venc){const b={id:uid(),nome:String(a.nome),valor:v,venc,acc:validAcc(a.conta)||'pessoal',cat:'',rec:a.repete!==false};
+        const g=guess(norm(b.nome)); b.cat=g.rule?g.rule[b.acc]:(b.acc==='crown'?'outros_crown':'outros');
+        putBill(b);addLive('bot',`<p>Coloquei nos lembretes: <strong>${esc(b.nome)}</strong>, ${money(v)}, vence ${esc(shortDate(venc))} (${accName(b.acc)})${b.rec?', todo mês':''}. 🗓️</p>`);did=true}}
+    else if(tipo==='lembrar'&&a.fato){const f=String(a.fato).trim().slice(0,200);
+      if(f&&!S.mem.notes.some(x=>norm(x.t)===norm(f))){S.mem.notes.push({t:f,d:today()});while(S.mem.notes.length>60)S.mem.notes.shift();saveMem();
+        addLive('bot',`<p style="font-size:13px;color:var(--muted)">🧠 Guardei na memória: ${esc(f)}</p>`)}did=true}
+    else if(tipo==='esquecer'&&a.fato){const f=norm(String(a.fato));const before=S.mem.notes.length;
+      S.mem.notes=S.mem.notes.filter(x=>{const t=norm(x.t);return !(t.includes(f.trim())||f.includes(t.trim()))});
+      if(S.mem.notes.length!==before){saveMem();addLive('bot','<p style="font-size:13px;color:var(--muted)">🧠 Pronto, esqueci.</p>')}did=true}
+    else if(tipo==='abrir'){const t=a.tela;if(t==='graficos')setTab('graf');else if(t==='contas')setTab('contas');else if(t==='saldos')openSaldos();did=true}
+  }
+  if(!did){addLive('bot','<p>Hmm, não entendi direito 🤔 Me fala de outro jeito? Pode ser tipo <strong>gastei 45 de gasolina na van</strong> ou <strong>quanto gastei no mercado esse mês?</strong></p>')}
+}
+
+function findTx(a){
+  const d=a.descricao?norm(String(a.descricao)).trim():'', v=num(a.valor), dt=validDate(a.data);
+  const c=[...S.tx].filter(t=>t.kind!=='ajuste').sort((x,y)=>y.ts-x.ts).filter(t=>(!d||norm(t.desc+' '+(t.raw||'')).includes(d))&&(!v||Math.abs(t.amount-v)<0.01)&&(!dt||t.date===dt));
+  return c[0]||null;
+}
+function runQuery(q){
+  const t=today();
+  let de=validDate(q.de)||t.slice(0,8)+'01', ate=validDate(q.ate)||t; if(de>ate){const x=de;de=ate;ate=x}
+  const tipo=q.tipo_lanc==='entrada'?'entrada':'gasto', ac=validAcc(q.conta);
+  const cats=Array.isArray(q.categorias)?q.categorias.filter(c=>CAT[c]):null;
+  const tx=q.texto?norm(String(q.texto)).trim():'';
+  const rows=S.tx.filter(x=>x.kind===tipo&&x.date>=de&&x.date<=ate&&(!ac||x.acc===ac)&&(!cats||!cats.length||cats.includes(x.cat))&&(!tx||norm(x.desc+' '+(x.raw||'')).includes(tx)));
+  const tot=rows.reduce((s,x)=>s+x.amount,0);
+  const dm=s=>{const d=pdate(s);return pad(d.getDate())+'/'+pad(d.getMonth()+1)};
+  const grp=q.agrupar||'nenhum'; let bars='';
+  if(rows.length&&grp!=='nenhum'){
+    const by={};for(const x of rows){const k=grp==='categoria'?(CAT[x.cat]?.n||x.cat):grp==='origem'?x.desc:grp==='dia'?dm(x.date):grp==='mes'?MES[+x.date.slice(5,7)-1]+'/'+x.date.slice(2,4):'';by[k]=(by[k]||0)+x.amount}
+    const list=Object.entries(by).sort((a,b)=>grp==='dia'||grp==='mes'?0:b[1]-a[1]).slice(0,10);const mx=Math.max(...list.map(x=>x[1]));
+    bars=list.map(([k,v])=>`<div class="cbar" style="grid-template-columns:minmax(0,1fr) auto"><div class="n">${esc(k)}</div><div class="v">${money(v)}</div><div class="track" style="grid-column:1/3"><div class="fill ${tipo==='entrada'?'p':(ac==='pessoal'?'p':'c')}" style="width:${Math.max(3,v/mx*100)}%"></div></div></div>`).join('');
+  }
+  const items=rows.length&&rows.length<=6?`<div class="kv" style="margin-top:6px">${[...rows].sort((a,b)=>a.date.localeCompare(b.date)).map(x=>`<span class="dim">${dm(x.date)} · ${esc(x.desc)}</span><span>${money(x.amount)}</span>`).join('')}</div>`:'';
+  addLive('bot',`<p class="lead">${esc(q.titulo||(tipo==='entrada'?'Recebimentos':'Gastos'))}</p>
+   <p style="font-size:12.5px;color:var(--muted)">${dm(de)} a ${dm(ate)}${ac?' · '+accName(ac):''}</p>
+   <div class="big num" style="margin:6px 0;${tipo==='entrada'?'color:var(--ok)':''}">${money(tot)}</div>
+   <p style="font-size:13px;color:var(--muted)">${rows.length} ${rows.length===1?'lançamento':'lançamentos'}</p>
+   ${bars?`<div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">${bars}</div>`:''}${items}`);
+  pushHist('nina',`[consulta "${q.titulo||''}": total ${tot.toFixed(2)}, ${rows.length} lançamentos]`);
+}
+
+/* comandos */
+function cmdSaldo(acc){const b=balances();
+  if(acc==='crown'||acc==='pessoal'){
+    return addLive('bot',`<p>Na conta <strong>${accName(acc)}</strong> você tem agora:</p><div class="big num" style="margin:4px 0;${b[acc]<0?'color:var(--danger)':''}">${money(b[acc])}</div>
+    <p style="font-size:13px;color:var(--muted)">Na ${accName(acc==='crown'?'pessoal':'crown')}: ${money(b[acc==='crown'?'pessoal':'crown'])}</p>`)}
+  addLive('bot',`<p class="lead">${pick(['Aqui está:','Seus saldos agora:','Olha como tá:'],Date.now())}</p><div class="kv" style="min-width:200px"><span class="dim">🟡 Crown</span><span class="${b.crown<0?'neg':''}">${money(b.crown)}</span><span class="dim">🟢 Pessoal</span><span>${money(b.pessoal)}</span><span class="dim"><strong>Total</strong></span><span>${money(b.crown+b.pessoal)}</span></div>
+  <div class="choices"><button class="btn ghost" data-act="saldos">Atualizar saldos</button></div>`)}
+function cmdHoje(){const r=dayTotals(today());
+  if(!r.n) return addLive('bot','<p>Hoje ainda não teve nenhum gasto. Tá economizando, hein? 😎</p>');
+  const top=Object.entries(r.byCat).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([c,v])=>`<span class="dim">${CAT[c]?.i||''} ${esc(CAT[c]?.n||c)}</span><span>${money(v)}</span>`).join('');
+  addLive('bot',`<p class="lead">Hoje até agora: ${money(r.total)}</p><div class="kv"><span class="dim">Crown</span><span>${money(r.crown)}</span><span class="dim">Pessoal</span><span>${money(r.pessoal)}</span>${top}</div>`)}
+function cmdMes(){const mk=today().slice(0,7);const g=gastos().filter(t=>t.date.startsWith(mk));
+  if(!g.length) return addLive('bot','<p>Nenhum gasto anotado nesse mês ainda.</p>');
+  const by={};let tot=0,c=0;for(const t of g){by[t.cat]=(by[t.cat]||0)+t.amount;tot+=t.amount;if(t.acc==='crown')c+=t.amount}
+  const top=Object.entries(by).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k,v])=>`<span class="dim">${CAT[k]?.i||''} ${esc(CAT[k]?.n||k)}</span><span>${money(v)}</span>`).join('');
+  addLive('bot',`<p class="lead">No mês: ${money(tot)}</p><div class="kv"><span class="dim">Crown</span><span>${money(c)}</span><span class="dim">Pessoal</span><span>${money(tot-c)}</span></div><p style="margin-top:8px;font-weight:600">Onde mais foi:</p><div class="kv">${top}</div>
+  <div class="choices"><button class="btn ghost" data-act="tabgraf">Ver gráficos</button></div>`)}
+function cmdContas(){const wb=weekBills();
+  if(wb.length) return addLive('bot',weekStory(wb)+'<div class="choices"><button class="btn ghost" data-act="tabcontas">Ver contas</button></div>');
+  if(!wb.length) return addLive('bot',`<p>Nenhuma conta vencendo nos próximos 7 dias. 🙌</p><div class="choices"><button class="btn ghost" data-act="tabcontas">Cadastrar contas</button></div>`);
+  let tot=0,c=0;const rows=wb.map(b=>{tot+=b.valor;if(b.acc==='crown')c+=b.valor;return `<span class="dim">${esc(shortDate(b.venc))} · ${esc(b.nome)}${b.venc<today()?' (atrasada)':''}</span><span>${money(b.valor)}</span>`}).join('');
+  addLive('bot',`<p class="lead">Essa semana você precisa pagar ${money(tot)}</p><div class="kv">${rows}</div>
+  <div class="kv" style="border-top:1px dashed var(--line);padding-top:7px;margin-top:7px"><span class="dim">Da Crown</span><span>${money(c)}</span><span class="dim">Da Pessoal</span><span>${money(tot-c)}</span><span><strong>Total</strong></span><span>${money(tot)}</span></div>`)}
+function cmdReceb(){const mk=today().slice(0,7);const e=S.tx.filter(t=>t.kind==='entrada'&&t.date.startsWith(mk));
+  if(!e.length) return addLive('bot','<p>Nenhum recebimento anotado nesse mês ainda. Quando entrar dinheiro, me manda tipo <strong>recebi 2500 da ABC</strong>.</p>');
+  const by={};let tot=0;for(const t of e){const k=t.desc||'Sem nome';by[k]=(by[k]||0)+t.amount;tot+=t.amount}
+  const rows=Object.entries(by).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<span class="dim">🏢 ${esc(k)}</span><span>${money(v)}</span>`).join('');
+  addLive('bot',`<p class="lead">Esse mês entrou ${money(tot)}</p><p style="margin-bottom:6px">De onde veio:</p><div class="kv">${rows}</div>
+  <div class="choices"><button class="btn ghost" data-act="tabgraf">Ver gráfico</button></div>`)}
+function cmdUndo(){const last=[...S.tx].filter(t=>t.kind!=='ajuste').sort((a,b)=>b.ts-a.ts)[0];
+  if(!last) return addLive('bot','<p>Não tem nada pra desfazer.</p>');
+  delTx(last.id); addLive('bot',`<p>Apaguei o último lançamento: <strong>${esc(last.desc)}</strong> (${money(last.amount)}) da ${accName(last.acc)}.</p>`)}
+function cmdAjuda(){addLive('bot',`<p class="lead">Tudo que eu entendo:</p><p style="font-size:11.5px;color:var(--muted)">Versão ${APP_VER}</p>
+ <p>• <strong>valor + o que foi</strong> → anoto o gasto<br>• <strong>entrou 2000 crown</strong> → dinheiro que entrou<br>• <strong>ontem 30 pizza</strong> → lança no dia anterior<br>• <strong>saldo</strong> → mostra quanto tem<br>• <strong>saldo crown 5000</strong> → corrige o saldo<br>• <strong>hoje</strong> / <strong>mês</strong> → resumos<br>• <strong>contas</strong> → o que vence na semana<br>• <strong>desfazer</strong> → apaga o último</p>`)}
+function cmdOi(){const h=new Date().getHours();addLive('bot',`<p>${pick(['Tô aqui sim!','Opa, tô aqui!','Tô por aqui 👋'],Date.now())} ${h<12?'Bom dia':h<18?'Boa tarde':'Boa noite'}. Pode mandar um gasto, uma entrada ou uma pergunta sobre suas contas.</p>`)}
+
+/* ---------- planilha / sheet ---------- */
+function openSheet(html,mount){const bg=$('#sheetBg'),sh=$('#sheet');sh.innerHTML='<div class="grab"></div><button class="closex" data-close aria-label="Fechar">×</button>'+html;bg.hidden=false;mount&&mount(sh)}
+function closeSheet(){$('#sheetBg').hidden=true;$('#sheet').innerHTML=''}
+$('#sheetBg').addEventListener('click',e=>{if(e.target.id==='sheetBg'||e.target.closest('[data-close]'))closeSheet()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#sheetBg').hidden)closeSheet()});
+
+function openSaldos(){
+  const b=balances();
+  const acct=(a)=>`<div class="acct ${ac(a)}"><div class="top2"><span class="nm">${a==='crown'?'Crown':'Pessoal'}</span><span class="cur num" id="cur_${a}">${money(b[a])}</span></div>
+    <div class="fld"><label for="set_${a}">Quanto tem na conta agora</label><div class="inline"><input id="set_${a}" inputmode="decimal" placeholder="Ex: 5.230,00"><button class="btn" data-set="${a}">Salvar</button></div></div>
+    <div class="fld"><label for="in_${a}">Entrou dinheiro</label><div class="inline"><input id="in_${a}" inputmode="decimal" placeholder="Valor"><input id="src_${a}" placeholder="Quem pagou"><button class="btn ghost" data-in="${a}">Somar</button></div></div>
+    <div class="ok-msg" id="ok_${a}" aria-live="polite"></div></div>`;
+  openSheet(`<h3>Saldos das contas</h3><p class="sub">Coloca quanto tem hoje em cada conta. A partir daí eu desconto cada gasto e somo cada entrada.</p>${acct('crown')}${acct('pessoal')}`,sh=>{
+    sh.addEventListener('click',e=>{
+      const s=e.target.closest('[data-set]'),i=e.target.closest('[data-in]');
+      if(s){const a=s.dataset.set,inp=$('#set_'+a),v=parseAmount(inp.value);
+        if(!v&&inp.value.trim()!=='0'){$('#ok_'+a).textContent='Digita um valor, ex: 5.230,00';return}
+        setBalance(a,v?v.v:0);inp.value='';$('#cur_'+a).textContent=money(balances()[a]);$('#ok_'+a).textContent='Saldo salvo ✓';renderAll()}
+      if(i){const a=i.dataset.in,inp=$('#in_'+a),v=parseAmount(inp.value);
+        if(!v){$('#ok_'+a).textContent='Digita o valor que entrou';return}
+        const who=srcName($('#src_'+a).value.trim()||'Sem nome');
+        putTx({id:uid(),ts:Date.now(),date:today(),kind:'entrada',amount:v.v,acc:a,cat:'entrada',desc:who,raw:'Recebi '+money(v.v)+(who!=='Sem nome'?' de '+who:'')+' na '+accName(a)});
+        inp.value='';$('#src_'+a).value='';$('#cur_'+a).textContent=money(balances()[a]);$('#ok_'+a).textContent='Entrada somada ✓';renderAll()}
+    });
+  });
+}
+
+function openMemory(){
+  const draw=sh=>{const notes=S.mem.notes, L=Object.entries(S.mem.learned).sort((a,b)=>b[1].n-a[1].n).slice(0,30);
+    sh.querySelector('#memBody').innerHTML=`
+    <div class="panel" style="margin-top:0"><h2>O que a Nina lembra</h2>
+      ${notes.length?notes.map((x,i)=>`<div style="display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-top:${i?'1px solid var(--line)':'0'}"><div style="flex:1;min-width:0">${esc(x.t)}<div style="font-size:11.5px;color:var(--muted)">${x.d?esc(shortDate(x.d)):''}</div></div><button class="rm" style="padding:5px 10px;border-radius:99px;font-size:12px" data-mdel="${i}">Esquecer</button></div>`).join('')
+        :'<div class="empty" style="padding:10px">Nada ainda. Fala pra ela, tipo <strong>lembra que o Carlos é meu funcionário</strong>.</div>'}
+    </div>
+    <div class="panel"><h2>O que ela aprendeu dos seus lançamentos</h2><div class="hint">Quando você lança de novo, ela já sugere a conta e a categoria.</div>
+      ${L.length?`<div class="kv">${L.map(([k,v])=>`<span class="dim">${esc(k)}</span><span><span class="tag ${ac(v.acc)}">${accName(v.acc)}</span> ${CAT[v.cat]?.i||''}</span>`).join('')}</div>`:'<div class="empty" style="padding:10px">Vai aprendendo conforme você lança.</div>'}
+    </div>
+    <p class="sub" style="margin-top:12px">A conversa também fica salva, e a Nina usa as últimas mensagens pra entender o contexto, mesmo de outros dias.</p>`};
+  openSheet(`<h3>Memória da Nina</h3><p class="sub">Tudo fica salvo só na sua conta.</p><div id="memBody"></div>`,sh=>{draw(sh);
+    sh.addEventListener('click',e=>{const d=e.target.closest('[data-mdel]');if(d){S.mem.notes.splice(+d.dataset.mdel,1);saveMem();draw(sh)}})});
+}
+async function exportBackup(){
+  const data={app:'nina',version:1,exportedAt:new Date().toISOString(),tx:S.tx,bills:S.bills,msgs:S.live.filter(m=>!m.temp),mem:S.mem};
+  const json=JSON.stringify(data,null,1), filename='nina-backup-'+today()+'.json';
+  if(window.NINA_APP){const blob=new Blob([json],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);return}
+  let dl=null;try{dl=window.claude&&await window.claude.use('downloads')}catch(e){}
+  if(!dl) return addLive('bot','<p>Não consegui baixar o backup daqui 😕</p>',{temp:true});
+  try{await dl.save({filename,data:json});addLive('bot',`<p>Backup baixado ✓ (${S.tx.length} lançamentos, ${S.bills.length} contas). Abra a Nina no app e importe esse arquivo em ⚙️ Ajustes → Importar backup.</p>`,{temp:true})}
+  catch(e){if(e&&e.code&&e.code!=='declined'&&e.code!=='cancelled')addLive('bot','<p>Não consegui baixar o backup agora. Tenta de novo.</p>',{temp:true})}
+}
+function openSettings(){
+  const draw=sh=>{
+    const key=lsGet(KEY_LS), model=lsGet(MODEL_LS)||'claude-haiku-5-5';
+    const notif=('Notification' in window)?Notification.permission:'unsupported';
+    sh.querySelector('#setBody').innerHTML=`
+    <div class="setsec"><h4>Inteligência ${key?'<span class="pill on">ligada</span>':'<span class="pill off">desligada</span>'}</h4>
+      <p>Sem a inteligência, a Nina entende o jeito simples (<strong>45 gasolina van</strong>). Com ela, entende qualquer frase, responde perguntas e tem memória. Pra ligar, cole uma chave da API da Anthropic (console.anthropic.com → API Keys). Cobra por uso, normalmente centavos por dia. A chave fica salva só neste aparelho.</p>
+      <div class="fld"><label for="sKey">Chave da API</label><input id="sKey" type="password" autocomplete="off" placeholder="sk-ant-..." value="${key?'••••••••••••':''}"></div>
+      <div class="fld"><label for="sModel">Modelo</label><select id="sModel"><option value="claude-haiku-5-5">Rápido e barato (Haiku)</option><option value="claude-sonnet-5-5">Mais esperto (Sonnet)</option></select></div>
+      <div class="setrow"><button class="btn" data-s="savekey">Salvar chave</button>${key?'<button class="btn ghost" data-s="delkey">Remover chave</button>':''}</div>
+      <div class="ok-msg" id="sKeyMsg"></div></div>
+    <div class="setsec"><h4>Backup</h4>
+      <p>Seus dados ficam salvos só neste aparelho. Baixe um backup de vez em quando (e antes de trocar de celular). Pra levar pra outro aparelho, é só importar o arquivo lá.</p>
+      <div class="setrow"><button class="btn" data-s="export">Baixar backup</button><button class="btn ghost" data-s="import">Importar backup</button></div>
+      <input type="file" id="sFile" accept=".json,application/json" hidden>
+      <div id="sImp"></div></div>
+    <div class="setsec"><h4>Avisos de contas ${notif==='granted'?'<span class="pill on">ligados</span>':'<span class="pill off">desligados</span>'}</h4>
+      <p>${notif==='unsupported'?'Este navegador não mostra avisos. No iPhone, primeiro instale a Nina na tela de início (Compartilhar → Adicionar à Tela de Início) e abra por lá.':'Quando você abrir a Nina e tiver conta vencendo em até 2 dias (ou atrasada), ela mostra um aviso no celular, uma vez por dia.'}</p>
+      ${notif!=='unsupported'&&notif!=='granted'?'<div class="setrow"><button class="btn" data-s="notif">Ativar avisos</button></div>':''}</div>
+    <p class="sub" style="text-align:center">Nina ${APP_VER}</p>`;
+    const sm=sh.querySelector('#sModel'); if(sm) sm.value=model;
+  };
+  openSheet(`<h3>Ajustes</h3><p class="sub">Inteligência, backup e avisos.</p><div id="setBody"></div>`,sh=>{
+    draw(sh);
+    sh.addEventListener('change',e=>{
+      if(e.target.id==='sModel'){lsSet(MODEL_LS,e.target.value);initAI()}
+      if(e.target.id==='sFile'){const f=e.target.files&&e.target.files[0];if(!f)return;const rd=new FileReader();
+        rd.onload=()=>{let j=null;try{j=JSON.parse(rd.result)}catch(x){}
+          const box=sh.querySelector('#sImp');
+          if(!j||!Array.isArray(j.tx)||!Array.isArray(j.bills)){box.innerHTML='<p style="color:var(--danger)">Esse arquivo não é um backup da Nina.</p>';return}
+          box.innerHTML=`<p>Backup com <strong>${j.tx.length}</strong> lançamentos, <strong>${j.bills.length}</strong> contas e ${(j.msgs||[]).length} mensagens. Isso vai <strong>substituir</strong> o que está neste aparelho.</p><div class="setrow" style="margin-top:8px"><button class="btn gold" data-s="doimport">Importar agora</button></div>`;
+          box._data=j};rd.readAsText(f)}
+    });
+    sh.addEventListener('click',async e=>{const b=e.target.closest('[data-s]');if(!b)return;const k=b.dataset.s;
+      if(k==='savekey'){const v=sh.querySelector('#sKey').value.trim();const msg=sh.querySelector('#sKeyMsg');
+        if(!v||v.startsWith('•')){msg.textContent='Cole a chave inteira (começa com sk-ant-).';return}
+        if(!/^sk-ant-/.test(v)){msg.textContent='Essa chave não parece certa: ela começa com sk-ant-.';return}
+        lsSet(KEY_LS,v);await initAI();msg.textContent='Testando a chave…';
+        try{await sampleFn.json('Responda só com {"ok":true}',{});msg.textContent='Chave funcionando ✓ A inteligência está ligada.';}
+        catch(err){msg.textContent=err&&err.code==='bad_key'?'A chave não foi aceita. Confere se copiou certo.':err&&err.code==='no_credit'?'A chave funciona, mas a conta está sem crédito.':'Não consegui testar agora (internet?). A chave ficou salva.'}
+        draw(sh);sh.querySelector('#sKeyMsg').textContent=msg.textContent}
+      if(k==='delkey'){lsSet(KEY_LS,'');await initAI();draw(sh)}
+      if(k==='export'){exportBackup()}
+      if(k==='import'){sh.querySelector('#sFile').click()}
+      if(k==='doimport'){const j=sh.querySelector('#sImp')._data;if(!j)return;
+        try{localStorage.setItem(LS,JSON.stringify({tx:j.tx,bills:j.bills,msgs:j.msgs||[],mem:j.mem||{}}))}catch(x){}
+        S.live=[];S.pend=[];loadLocal();closeSheet();renderAll();addLive('bot','<p>Backup importado ✓ Tá tudo aqui.</p>',{temp:true})}
+      if(k==='notif'){try{await Notification.requestPermission()}catch(x){}draw(sh);billAlert(true)}
+    });
+  });
+}
+async function billAlert(force){
+  try{
+    if(!('Notification' in window)||Notification.permission!=='granted')return;
+    const t=today(); if(!force&&lsGet('nina-notified')===t)return;
+    const soon=S.bills.filter(b=>b.venc<=addDays(t,2)).sort((a,b)=>a.venc.localeCompare(b.venc)); if(!soon.length)return;
+    const tot=soon.reduce((s,b)=>s+b.valor,0);
+    const body=soon.slice(0,4).map(b=>`${b.nome} · ${money(b.valor)} · ${b.venc<t?'atrasada':dayPhrase(b.venc)}`).join('\n')+(soon.length>4?`\n+${soon.length-4} contas`:'');
+    const title=`Contas chegando: ${money(tot)}`;
+    const reg=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration();
+    if(reg) await reg.showNotification(title,{body,icon:'icon-192.png',badge:'icon-192.png',tag:'nina-contas'});
+    else new Notification(title,{body,icon:'icon-192.png'});
+    lsSet('nina-notified',t);
+  }catch(e){}
+}
+function openEdit(id){
+  const t=S.tx.find(x=>x.id===id); if(!t) return;
+  let acc=t.acc, cat=t.cat, confirmDel=false, addBal=!t.noBal;
+  const draw=sh=>{
+    const cats=t.kind!=='gasto'?[]:CATS.filter(c=>c.a===acc);
+    sh.querySelector('#editBody').innerHTML=`
+      <div class="form"><div class="fld full"><label for="eDesc">Descrição</label><input id="eDesc" value="${esc(t.desc)}"></div>
+      <div class="fld"><label for="eVal">Valor</label><input id="eVal" inputmode="decimal" value="${Math.abs(t.amount).toFixed(2).replace('.',',')}"></div>
+      <div class="fld"><label for="eDate">Data</label><input id="eDate" type="date" value="${t.date}"></div>
+      ${t.kind==='entrada'?`<label class="chk full"><input type="checkbox" id="eBal" ${addBal?'checked':''}> Somar esse valor no saldo da conta</label>`:''}</div>
+      <div class="choices" style="margin-top:12px"><button class="choice c ${acc==='crown'?'sug':''}" data-eacc="crown"><span class="cn"><i></i>Crown</span></button><button class="choice p ${acc==='pessoal'?'sug':''}" data-eacc="pessoal"><span class="cn"><i></i>Pessoal</span></button></div>
+      ${cats.length?`<div class="catgrid">${cats.map(c=>`<button class="catbtn ${c.id===cat?'on':''}" data-ecat="${c.id}"><span>${c.i}</span>${esc(c.n)}</button>`).join('')}</div>`:''}
+      <div style="display:flex;gap:8px;margin-top:14px"><button class="btn danger" data-edel>${confirmDel?'Toca de novo pra apagar':'Apagar'}</button><button class="btn" style="flex:1" data-esave>Salvar</button></div>`;
+  };
+  openSheet(`<h3>Editar lançamento</h3><p class="sub">${esc(t.raw||t.desc)}</p><div id="editBody"></div>`,sh=>{
+    draw(sh);
+    sh.addEventListener('change',e=>{if(e.target.id==='eBal')addBal=e.target.checked});
+    sh.addEventListener('click',e=>{
+      const a=e.target.closest('[data-eacc]'),c=e.target.closest('[data-ecat]');
+      if(a){const keepDesc=$('#eDesc').value,keepV=$('#eVal').value,keepD=$('#eDate').value;acc=a.dataset.eacc;if(CAT[cat]?.a&&CAT[cat].a!==acc){const r=guess(norm(t.desc)).rule;cat=r?r[acc]:(acc==='crown'?'outros_crown':'outros')}draw(sh);$('#eDesc').value=keepDesc;$('#eVal').value=keepV;$('#eDate').value=keepD}
+      if(c){cat=c.dataset.ecat;sh.querySelectorAll('[data-ecat]').forEach(b=>b.classList.toggle('on',b===c))}
+      if(e.target.closest('[data-edel]')){if(!confirmDel){confirmDel=true;e.target.closest('[data-edel]').textContent='Toca de novo pra apagar';return}delTx(t.id);closeSheet();renderAll()}
+      if(e.target.closest('[data-esave]')){const v=parseAmount($('#eVal').value);if(!v)return;
+        const nt={...t,desc:$('#eDesc').value.trim()||t.desc,amount:t.amount<0?-v.v:v.v,date:$('#eDate').value||t.date,acc,cat:t.kind==='gasto'?cat:t.cat};if(nt.kind==='entrada'){if(addBal)delete nt.noBal;else nt.noBal=true}putTx(nt);if(nt.kind==='gasto')learn(nt.desc,nt.acc,nt.cat);closeSheet();renderAll()}
+    });
+  });
+}
+
+/* ---------- gráficos ---------- */
+let gPeriod='mes',gAcc='all';
+function periodRange(){const t=today();
+  if(gPeriod==='7')return [addDays(t,-6),t];
+  if(gPeriod==='mes')return [t.slice(0,8)+'01',t];
+  if(gPeriod==='ant'){const d=pdate(t);d.setDate(1);d.setMonth(d.getMonth()-1);const s=dstr(d);const e=dstr(new Date(d.getFullYear(),d.getMonth()+1,0));return [s,e]}
+  const all=gastos().map(x=>x.date).sort();return [all[0]||t,t];
+}
+function niceStep(max){const raw=max/4;const p=Math.pow(10,Math.floor(Math.log10(raw||1)));const m=raw/p;return (m<=1?1:m<=2?2:m<=2.5?2.5:m<=5?5:10)*p}
+function renderGraf(){
+  const [s,e]=periodRange();
+  const g=gastos().filter(t=>t.date>=s&&t.date<=e&&(gAcc==='all'||t.acc===gAcc));
+  const body=$('#grafBody');
+  const tot=g.reduce((a,t)=>a+t.amount,0), c=g.filter(t=>t.acc==='crown').reduce((a,t)=>a+t.amount,0);
+  let html=`<div class="kpis"><div class="kpi"><div class="l">Total</div><div class="v num">${money(tot)}</div></div>
+   <div class="kpi"><div class="l"><i style="background:var(--gold)"></i>Crown</div><div class="v num">${money(c)}</div></div>
+   <div class="kpi"><div class="l"><i style="background:var(--teal)"></i>Pessoal</div><div class="v num">${money(tot-c)}</div></div></div>`;
+  const inc=S.tx.filter(t=>t.kind==='entrada'&&t.date>=s&&t.date<=e&&(gAcc==='all'||t.acc===gAcc));
+  let incHtml='';
+  if(inc.length){const by={};let it=0;for(const t of inc){const k=t.desc||'Sem nome';by[k]=by[k]||{v:0,n:0,c:0};by[k].v+=t.amount;by[k].n++;if(t.acc==='crown')by[k].c+=t.amount;it+=t.amount}
+    const rows=Object.entries(by).sort((a,b)=>b[1].v-a[1].v);const mxI=rows[0][1].v;
+    incHtml=`<div class="panel"><h2>De onde vem o dinheiro</h2><div class="hint">Quanto cada companhia te pagou no período.</div>
+    <div><div style="font-size:12.5px;color:var(--muted)">Total recebido</div><div class="big num" style="color:var(--ok)">${money(it)}</div></div>
+    ${rows.map(([k,o])=>`<div class="cbar"><div class="e">🏢</div><div class="n">${esc(k)} <span class="pct">${o.n} ${o.n===1?'pagamento':'pagamentos'}</span></div><div class="v">${money(o.v)}<span class="pct">${Math.round(o.v/it*100)}%</span></div><div class="track"><div class="fill ${o.c>=o.v/2?'c':'p'}" style="width:${Math.max(2,o.v/mxI*100)}%"></div></div></div>`).join('')}</div>`}
+  else incHtml=`<div class="panel"><h2>De onde vem o dinheiro</h2><div class="empty">Nenhum recebimento nesse período.<br>Manda na conversa: <strong>recebi 2500 da ABC</strong>.</div></div>`;
+  if(!g.length){body.innerHTML=html+`<div class="panel"><div class="empty">Nenhum gasto nesse período ainda.<br>Lança alguns na conversa que os gráficos aparecem aqui. 📊</div></div>`+incHtml;return}
+  // categorias
+  const by={};for(const t of g){by[t.cat]=(by[t.cat]||0)+t.amount}
+  const cats=Object.entries(by).sort((a,b)=>b[1]-a[1]); const mx=cats[0][1];
+  html+=`<div class="panel"><h2>Onde você mais gasta</h2><div class="hint">Cada barra é uma categoria. Dourado é Crown, verde é pessoal.</div>
+   ${cats.map(([k,v])=>{const cc=CAT[k]||CAT.outros;return `<div class="cbar"><div class="e">${cc.i}</div><div class="n">${esc(cc.n)}</div><div class="v">${money(v)}<span class="pct">${Math.round(v/tot*100)}%</span></div><div class="track"><div class="fill ${cc.a==='crown'?'c':'p'}" style="width:${Math.max(2,v/mx*100)}%"></div></div></div>`}).join('')}</div>`;
+  // por dia / por mês
+  const span=diffDays(s,e)+1, monthly=span>62;
+  const buckets=[];
+  if(monthly){let d=pdate(s);d.setDate(1);while(dstr(d)<=e){const k=dstr(d).slice(0,7);buckets.push({k,l:MES[d.getMonth()],c:0,p:0});d.setMonth(d.getMonth()+1)}}
+  else{for(let i=0;i<span;i++){const k=addDays(s,i);buckets.push({k,l:String(pdate(k).getDate()),c:0,p:0})}}
+  const idx=Object.fromEntries(buckets.map((b,i)=>[b.k,i]));
+  for(const t of g){const k=monthly?t.date.slice(0,7):t.date;const i=idx[k];if(i!=null)buckets[i][t.acc==='crown'?'c':'p']+=t.amount}
+  const W=600,H=220,L=50,R=10,T=12,B=26,iw=W-L-R,ih=H-T-B;
+  const bmax=Math.max(...buckets.map(b=>b.c+b.p),1),st=niceStep(bmax),top=Math.ceil(bmax/st)*st;
+  const y=v=>T+ih-(v/top)*ih, bw=iw/buckets.length, gap=Math.min(6,bw*.25);
+  let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Gasto ${monthly?'por mês':'por dia'}">`;
+  for(let v=0;v<=top+1e-9;v+=st){svg+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)">$${v>=1000?(v/1000).toLocaleString('pt-BR')+'k':v.toLocaleString('pt-BR')}</text>`}
+  const every=Math.ceil(buckets.length/12);
+  buckets.forEach((b,i)=>{const x=L+i*bw+gap/2,w=bw-gap;const hp=(b.p/top)*ih,hc=(b.c/top)*ih;
+    if(b.p>0)svg+=`<rect x="${x}" y="${T+ih-hp}" width="${w}" height="${hp}" rx="${Math.min(3,w/3)}" fill="var(--teal)"><title>${b.k}: Pessoal ${money(b.p)}</title></rect>`;
+    if(b.c>0)svg+=`<rect x="${x}" y="${T+ih-hp-hc}" width="${w}" height="${hc}" rx="${Math.min(3,w/3)}" fill="var(--gold)"><title>${b.k}: Crown ${money(b.c)}</title></rect>`;
+    if(i%every===0)svg+=`<text x="${x+w/2}" y="${H-8}" text-anchor="middle" font-size="11" fill="var(--muted)">${b.l}</text>`});
+  svg+='</svg>';
+  html+=`<div class="panel"><h2>${monthly?'Gasto por mês':'Gasto dia a dia'}</h2><div class="legend"><span><i style="background:var(--gold)"></i>Crown</span><span><i style="background:var(--teal)"></i>Pessoal</span></div><div class="chartwrap">${svg}</div></div>`;
+  // maiores gastos
+  const big=[...g].sort((a,b)=>b.amount-a.amount).slice(0,5);
+  html+=`<div class="panel"><h2>Maiores gastos</h2><div class="toplist">${big.map(t=>{const cc=CAT[t.cat]||CAT.outros;return `<div class="it"><div class="ico ${ac(t.acc)}">${cc.i}</div><div style="min-width:0"><div class="d">${esc(t.desc)}</div><div class="k">${esc(shortDate(t.date))} · ${accName(t.acc)}</div></div><div class="v">${money(t.amount)}</div></div>`}).join('')}</div></div>`;
+  body.innerHTML=html+incHtml;
+}
+$('#segPeriod').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;gPeriod=b.dataset.p;[...$('#segPeriod').children].forEach(x=>x.setAttribute('aria-pressed',x===b));renderGraf()});
+$('#segAcc').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;gAcc=b.dataset.a;[...$('#segAcc').children].forEach(x=>x.setAttribute('aria-pressed',x===b));renderGraf()});
+
+/* ---------- entradas ---------- */
+let ePeriod='semana';
+function entRange(){const t=today(),d=pdate(t);const dow=(d.getDay()+6)%7;const mon=addDays(t,-dow);
+  if(ePeriod==='passada')return [addDays(mon,-7),addDays(mon,-1),'Semana passada'];
+  if(ePeriod==='mes')return [t.slice(0,8)+'01',t,'Este mês'];
+  return [mon,t,'Esta semana'];}
+function renderEntradas(){
+  const [s0,e0,label]=entRange();
+  const dm=x=>{const d=pdate(x);return pad(d.getDate())+'/'+pad(d.getMonth()+1)};
+  const rows=S.tx.filter(t=>t.kind==='entrada'&&t.date>=s0&&t.date<=e0).sort((a,b)=>b.date.localeCompare(a.date)||b.ts-a.ts);
+  const tot=rows.reduce((s,t)=>s+t.amount,0), c=rows.filter(t=>t.acc==='crown').reduce((s,t)=>s+t.amount,0);
+  const nm=t=>['Entrada','Sem nome'].includes(t.desc)?'Sem nome':t.desc;
+  let html=`<div class="card" style="width:100%;margin:0"><div class="hd"><div class="tt">${label}</div><div class="sub">${dm(s0)} a ${dm(e0)}</div></div>
+   <div class="bd"><div><div style="font-size:12.5px;color:var(--muted)">Total que entrou</div><div class="big num" style="color:var(--ok)">${money(tot)}</div></div>
+   ${tot?`<div class="split" aria-hidden="true"><div class="c" style="width:${c/tot*100}%"></div><div class="p" style="width:${100-c/tot*100}%"></div></div>`:''}
+   <div class="kv"><span class="dim">Na Crown</span><span>${money(c)}</span><span class="dim">Na Pessoal</span><span>${money(tot-c)}</span><span class="dim">Pagamentos</span><span>${rows.length}</span></div></div></div>`;
+  if(!rows.length){$('#entBody').innerHTML=html+`<div class="panel"><div class="empty">Nada entrou nesse período ainda.<br>Quando receber, manda na conversa: <strong>recebi 2500 da ABC</strong>.</div></div>`;return}
+  const by={};for(const t of rows){const k=nm(t);by[k]=by[k]||{v:0,n:0,c:0};by[k].v+=t.amount;by[k].n++;if(t.acc==='crown')by[k].c+=t.amount}
+  const comp=Object.entries(by).sort((a,b)=>b[1].v-a[1].v), mx=comp[0][1].v;
+  html+=`<div class="panel"><h2>Por companhia</h2>
+   ${comp.map(([k,o])=>`<div class="cbar"><div class="e">🏢</div><div class="n">${esc(k)} <span class="pct">${o.n} ${o.n===1?'pagamento':'pagamentos'}</span></div><div class="v">${money(o.v)}<span class="pct">${Math.round(o.v/tot*100)}%</span></div><div class="track"><div class="fill ${o.c>=o.v/2?'c':'p'}" style="width:${Math.max(2,o.v/mx*100)}%"></div></div></div>`).join('')}</div>`;
+  html+=`<div class="panel"><h2>Cada pagamento</h2><div class="toplist">${rows.map(t=>{const d=pdate(t.date);return `<div class="it" style="grid-template-columns:42px 1fr auto"><div class="datechip"><b>${d.getDate()}</b><small>${MES[d.getMonth()]}</small></div>
+     <div style="min-width:0"><div class="d">${esc(nm(t))}</div><div class="k"><span class="tag ${ac(t.acc)}">${accName(t.acc)}</span> <button class="lnk" data-edit="${esc(t.id)}">Editar</button></div></div>
+     <div class="v" style="color:var(--ok)">+${money(t.amount)}</div></div>`}).join('')}</div></div>`;
+  $('#entBody').innerHTML=html;
+}
+$('#segEnt').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;ePeriod=b.dataset.e;[...$('#segEnt').children].forEach(x=>x.setAttribute('aria-pressed',x===b));renderEntradas()});
+$('#entBody').addEventListener('click',e=>{const ed=e.target.closest('[data-edit]');if(ed)openEdit(ed.dataset.edit)});
+
+/* ---------- contas a pagar ---------- */
+function fillCatSelect(){const a=$('#bAcc').value,sel=$('#bCat'),cur=sel.value;sel.innerHTML=CATS.filter(c=>c.a===a).map(c=>`<option value="${c.id}">${c.i} ${esc(c.n)}</option>`).join('');if([...sel.options].some(o=>o.value===cur))sel.value=cur}
+$('#bAcc').addEventListener('change',fillCatSelect);
+$('#bData').value=addDays(today(),7);
+function renderContas(){
+  const t=today(); const list=[...S.bills].sort((a,b)=>a.venc.localeCompare(b.venc));
+  const late=list.filter(b=>b.venc<t), week=list.filter(b=>b.venc>=t&&b.venc<=addDays(t,7)), later=list.filter(b=>b.venc>addDays(t,7));
+  const sum=a=>a.reduce((s,b)=>s+b.valor,0);
+  const badge=$('#billBadge'); const nAlert=late.length+week.length; badge.hidden=!nAlert; badge.textContent=nAlert;
+  if(!list.length){$('#contasBody').innerHTML=`<div class="panel"><div class="empty">Nenhuma conta cadastrada.<br>Adiciona abaixo: aluguel, seguro da van, luz, cartão…</div></div>`;return}
+  const row=b=>{const d=pdate(b.venc),dd=diffDays(t,b.venc);const cc=CAT[b.cat]||{};
+    const st=dd<0?`<span class="st late">Atrasada ${-dd}d</span>`:dd===0?`<span class="st soon">Vence hoje</span>`:dd<=7?`<span class="st soon">Em ${dd} ${dd===1?'dia':'dias'}</span>`:`<span class="st later">Em ${dd} dias</span>`;
+    return `<div class="bill"><div class="datechip ${dd<0?'late':''}"><b>${d.getDate()}</b><small>${MES[d.getMonth()]}</small></div>
+    <div style="min-width:0"><div class="nm">${esc(b.nome)}</div><div class="meta">${st}<span class="tag ${ac(b.acc)}">${accName(b.acc)}</span>${cc.i||''} ${b.rec?'· todo mês':''}</div></div>
+    <div class="val num">${money(b.valor)}</div>
+    <div class="acts"><button class="rm" data-brm="${b.id}">Remover</button><button class="rm" data-bedit="${b.id}">Editar</button><button class="pay" data-bpay="${b.id}">✓ Marcar como paga</button></div></div>`};
+  const grp=(title,arr)=>arr.length?`<div class="groupt">${title} · ${money(sum(arr))}</div>${arr.map(row).join('')}`:'';
+  const due=[...late,...week], dueC=sum(due.filter(b=>b.acc==='crown'));
+  $('#contasBody').innerHTML=`<div class="panel" style="margin:0 0 12px;line-height:1.5"><div style="display:flex;gap:9px;align-items:center"><div class="avatar sm" aria-hidden="true">N</div><strong>Recado da Nina</strong></div>${weekStory(due)}</div><div class="card" style="width:100%;margin:0"><div class="hd"><div class="tt">Pra pagar essa semana</div><div class="sub">${due.length} ${due.length===1?'conta':'contas'}</div></div>
+   <div class="bd"><div class="big num">${money(sum(due))}</div>
+   ${due.length?`<div class="split" aria-hidden="true"><div class="c" style="width:${sum(due)?dueC/sum(due)*100:0}%"></div><div class="p" style="width:${sum(due)?100-dueC/sum(due)*100:0}%"></div></div>`:''}
+   <div class="kv"><span class="dim">Crown</span><span>${money(dueC)}</span><span class="dim">Pessoal</span><span>${money(sum(due)-dueC)}</span>${late.length?`<span class="dim" style="color:var(--danger)">Inclui atrasadas</span><span style="color:var(--danger)">${money(sum(late))}</span>`:''}</div></div></div>
+   <div class="panel">${grp('Atrasadas',late)}${grp('Esta semana',week)}${grp('Mais pra frente',later)}</div>`;
+}
+$('#contasBody').addEventListener('click',e=>{
+  const p=e.target.closest('[data-bpay]'),r=e.target.closest('[data-brm]'),ed=e.target.closest('[data-bedit]');
+  if(ed){openBillEdit(ed.dataset.bedit);return}
+  if(p){const b=S.bills.find(x=>x.id===p.dataset.bpay);if(!b)return;
+    if(b.rec)putBill({...b,venc:addMonth(b.venc)});else delBill(b.id);renderAll()}
+  if(r){if(r.dataset.sure){delBill(r.dataset.brm);renderAll()}else{r.dataset.sure='1';r.textContent='Confirmar?'}}
+});
+function openBillEdit(id){
+  const b=S.bills.find(x=>x.id===id); if(!b) return;
+  const catOpts=a=>CATS.filter(c=>c.a===a).map(c=>`<option value="${c.id}">${c.i} ${esc(c.n)}</option>`).join('');
+  openSheet(`<h3>Editar conta</h3><p class="sub">Corrige o que precisar e toca em Salvar.</p>
+    <form class="form" id="ebForm">
+      <div class="fld full"><label for="ebNome">Nome da conta</label><input id="ebNome" value="${esc(b.nome)}"></div>
+      <div class="fld"><label for="ebValor">Valor</label><input id="ebValor" inputmode="decimal" value="${b.valor.toFixed(2).replace('.',',')}"></div>
+      <div class="fld"><label for="ebData">Vencimento</label><input id="ebData" type="date" value="${b.venc}"></div>
+      <div class="fld"><label for="ebAcc">Sai de qual conta</label><select id="ebAcc"><option value="pessoal">Pessoal</option><option value="crown">Crown</option></select></div>
+      <div class="fld"><label for="ebCat">Categoria</label><select id="ebCat"></select></div>
+      <label class="chk full"><input type="checkbox" id="ebRec"> Repete todo mês</label>
+      <div class="formerr full" id="ebErr"></div>
+      <button class="btn full" type="submit">Salvar</button>
+    </form>`,sh=>{
+    const acc=$('#ebAcc'),cat=$('#ebCat');
+    acc.value=b.acc; cat.innerHTML=catOpts(b.acc); if(CAT[b.cat]&&CAT[b.cat].a===b.acc) cat.value=b.cat;
+    $('#ebRec').checked=!!b.rec;
+    acc.addEventListener('change',()=>{cat.innerHTML=catOpts(acc.value)});
+    $('#ebForm').addEventListener('submit',e=>{e.preventDefault();
+      const nome=$('#ebNome').value.trim(),v=parseAmount($('#ebValor').value),venc=$('#ebData').value;
+      if(!nome){$('#ebErr').textContent='Coloca o nome da conta.';return}
+      if(!v){$('#ebErr').textContent='Coloca o valor, ex: 250,00.';return}
+      if(!venc){$('#ebErr').textContent='Escolhe a data de vencimento.';return}
+      putBill({...b,nome,valor:v.v,venc,acc:acc.value,cat:cat.value,rec:$('#ebRec').checked});
+      closeSheet();renderAll();
+    });
+  });
+}
+$('#billForm').addEventListener('submit',e=>{e.preventDefault();
+  const nome=$('#bNome').value.trim(),v=parseAmount($('#bValor').value),venc=$('#bData').value;
+  if(!nome){$('#bErr').textContent='Coloca o nome da conta.';return}
+  if(!v){$('#bErr').textContent='Coloca o valor, ex: 250,00.';return}
+  if(!venc){$('#bErr').textContent='Escolhe a data de vencimento.';return}
+  $('#bErr').textContent='';
+  putBill({id:uid(),nome,valor:v.v,venc,acc:$('#bAcc').value,cat:$('#bCat').value,rec:$('#bRec').checked});
+  $('#bNome').value='';$('#bValor').value='';renderAll();
+});
+
+/* ---------- navegação / eventos ---------- */
+function setTab(name){document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.tab===name));
+  ['chat','graf','entradas','contas'].forEach(n=>$('#tab-'+n).hidden=n!==name);
+  if(name==='graf')renderGraf(); if(name==='entradas')renderEntradas(); if(name==='contas')renderContas(); if(name==='chat')renderChat();}
+document.querySelector('.tabs').addEventListener('click',e=>{const t=e.target.closest('.tab');if(t)setTab(t.dataset.tab)});
+$('#composer').addEventListener('submit',e=>{e.preventDefault();const v=$('#inp').value;$('#inp').value='';handle(v);$('#inp').focus()});
+$('#quick').addEventListener('click',e=>{const b=e.target.closest('[data-q]');if(!b)return;if(b.dataset.q==='backup')return exportBackup();handle(b.dataset.q)});
+$('#msgs').addEventListener('click',e=>{
+  const a=e.target.closest('[data-acc]'),c=e.target.closest('[data-cat]'),ed=e.target.closest('[data-edit]'),act=e.target.closest('[data-act]');
+  if(a&&a.dataset.pid){nina(()=>chooseAcc(a.dataset.pid,a.dataset.acc),250)}
+  if(c&&c.dataset.pid){finish(c.dataset.pid,c.dataset.cat)}
+  const sr=e.target.closest('[data-src]'); if(sr&&sr.dataset.pid){const p=S.pend.find(x=>x.id===sr.dataset.pid);if(p){p.desc=sr.dataset.src;finish(p.id,'entrada')}}
+  if(e.target.closest('[data-noai]')&&aiCtl){aiCtl.abort()}
+  if(ed)openEdit(ed.dataset.edit);
+  if(act){const k=act.dataset.act;if(k==='saldos')openSaldos();if(k==='tabcontas')setTab('contas');if(k==='tabgraf')setTab('graf')}
+});
+['#balC','#balP','#balEdit'].forEach(s=>$(s).addEventListener('click',openSaldos));
+$('#gearBtn').addEventListener('click',openSettings);
+
+function renderHeader(){const b=balances();
+  const c=$('#balC b'),p=$('#balP b');c.textContent=money(b.crown);p.textContent=money(b.pessoal);c.classList.toggle('neg',b.crown<0);p.classList.toggle('neg',b.pessoal<0)}
+function renderAll(){renderHeader();
+  if(!$('#tab-chat').hidden)renderChat(); else renderChat();
+  if(!$('#tab-graf').hidden)renderGraf();
+  if(!$('#tab-entradas').hidden)renderEntradas();
+  renderContas();}
+
+window.addEventListener('error',e=>{if(!e.error)return;try{S.typing=0;addLive('bot',`<p style="font-size:12.5px;color:var(--muted)">⚠️ Deu um erro aqui (${APP_VER}): ${esc(String(e.error.message||e.error).slice(0,140))}. Manda de novo que eu tento outra vez.</p>`,{temp:true})}catch(x){}});
+window.addEventListener('unhandledrejection',e=>{try{const r=e.reason;if(r&&r.code)return;S.typing=0;addLive('bot',`<p style="font-size:12.5px;color:var(--muted)">⚠️ Deu um erro aqui (${APP_VER}): ${esc(String(r&&r.message||r).slice(0,140))}</p>`,{temp:true})}catch(x){}});
+fillCatSelect();
+initStore();
+initAI();
+setTimeout(()=>billAlert(false),1500);
+// confere a virada das 21h e da meia-noite pro fechamento do dia
+let lastCheck=new Date().getHours();
+setInterval(()=>{const h=new Date().getHours();if(h!==lastCheck){lastCheck=h;renderAll()}},60000);
+})();
+</script>
+
+<script>
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}
+</script>
+</body>
+</html>
